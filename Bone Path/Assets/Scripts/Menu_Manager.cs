@@ -11,27 +11,32 @@ public class Menu_Manager : MonoBehaviour
     public GameObject ExtrasPanel;
     public GameObject AudioPanel;
     public GameObject ControllerPanel;
+    public GameObject QuitGamePanel;
 
     // Start is called before the first frame update
     void Start()
     {
+
         
+
     }
 
     // Update is called once per frame
     void Update()
     {
+
         
+
     }
 
-    public void Jugar()
+    public void StartGame()
     {
 
         SceneManager.LoadScene(1);
 
     }
 
-    public void Opciones()
+    public void Options()
     {
 
         MainMenuPanel.SetActive(false);
@@ -93,11 +98,27 @@ public class Menu_Manager : MonoBehaviour
 
     }
 
-    public void Salir()
+    public void QuitGame()
+    {
+
+        MainMenuPanel.SetActive(false);
+        QuitGamePanel.SetActive(true);
+
+    }
+
+    public void YesQuitGame()
     {
 
         Debug.Log("Salir del juego");
         Application.Quit();
+
+    }
+
+    public void NoQuitGame()
+    {
+
+        QuitGamePanel.SetActive(false);
+        MainMenuPanel.SetActive(true);
 
     }
 

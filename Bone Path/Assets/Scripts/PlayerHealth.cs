@@ -10,12 +10,12 @@ public class PlayerHealth : MonoBehaviour
     public Sprite fullHeart;
     public Sprite emptyHeart;
 
-    private int currentHealth = 3;
-    private int maxHealth = 3;
+    int currentHealth = 3;
+    int maxHealth = 3;
 
-    private bool isHealing = false;
-    private float healTime = 2f; // tiempo que tarda en curar
-    private float healTimer = 0f;
+    bool isHealing = false;
+    public float healTime = 1f; // tiempo que tarda en curar
+    public float healTimer = 0f;
 
     void Start()
     {
@@ -24,21 +24,33 @@ public class PlayerHealth : MonoBehaviour
 
     void Update()
     {
-        // Iniciar curación si pulsa LeftShift
-        if (Input.GetKeyDown(KeyCode.LeftShift) && !isHealing && currentHealth < maxHealth)
+        // Si mantiene pulsada la E y aún no está a tope de vida
+        if (Input.GetKey(KeyCode.E) && currentHealth < maxHealth)
         {
-            StartHealing();
-        }
+            if (!isHealing)
+            {
+                isHealing = true;
+                healTimer = healTime;
+                Debug.Log("Manteniendo E para curarse...");
+            }
 
-        // Mientras cura
-        if (isHealing)
-        {
+            // va descontando tiempo
             healTimer -= Time.deltaTime;
 
             if (healTimer <= 0f)
             {
-                FinishHealing();
+                HealOneHeart();
+                isHealing = false; // reinicia para que vuelva a requerir mantener la tecla
             }
+        }
+        else
+        {
+            // si suelta la tecla, se cancela la curación
+            if (isHealing)
+            {
+                Debug.Log("Se interrumpió la curación.");
+            }
+            isHealing = false;
         }
 
         // TEST: perder vida con H
@@ -48,27 +60,14 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    void StartHealing()
+    void HealOneHeart()
     {
-        isHealing = true;
-        healTimer = healTime;
-
-        // Aquí puedes bloquear movimiento/ataque del jugador
-        Debug.Log("Jugador empieza a curarse...");
-    }
-
-    void FinishHealing()
-    {
-        isHealing = false;
-
         if (currentHealth < maxHealth)
         {
             currentHealth++;
             UpdateHeartsUI();
             Debug.Log("Jugador se curó 1 corazón!");
         }
-
-        // Aquí desbloqueas movimiento/ataque
     }
 
     public void TakeDamage(int damage)
