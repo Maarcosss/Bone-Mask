@@ -5,26 +5,26 @@ using UnityEngine.Rendering;
 
 public class PlayerMovement : MonoBehaviour
 {
-    //Conexiones Scripts
+    [Header("Referencias")]
     public ManagerOptions ManagerOptionsRef;
 
     Rigidbody mask_child;
 
-    //Floats
+    [Header("Movimiento")]
     public float Speed = 1f;
     public float JumpForce = 7f;
 
-    // Gravedad personalizada
-    public float extraGravity = 20f;    // fuerza extra hacia abajo
-    public float shortJumpMultiplier = 2f; // salto corto (si suelta espacio)
-    public float maxJumpTime = 0.25f;  // tiempo máximo manteniendo salto
+    [Header("Gravedad")]
+    public float extraGravity = 20f;        // fuerza extra hacia abajo
+    public float shortJumpMultiplier = 2f;  // salto corto si sueltas espacio
+    public float maxJumpTime = 0.25f;       // tiempo máximo manteniendo salto
     float jumpTimeCounter;
 
-    // Doble salto
+    [Header("Doble salto")]
     public int maxJumps = 2;
     int currentJumps;
 
-    //Bools
+    [Header("Estados")]
     public bool validar_inputs = true;
     bool Contacto_Suelo = false;
     bool isJumping = false;
@@ -38,9 +38,13 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        // Escape siempre se detecta
+        DetectarEscape();
+
+        // Solo si se permiten inputs normales
         if (validar_inputs)
         {
-            DetectarInputs();
+            DetectarMovimientoYSaltos();
         }
 
         // Aplicar gravedad extra todo el tiempo
@@ -53,25 +57,22 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    void DetectarInputs()
+    void DetectarEscape()
     {
-        //Escape
-        if (Input.GetKeyDown(KeyCode.Escape))
+        // Escape: abre/cierra pausa solo si NO estamos dentro de un submenú
+        if (Input.GetKeyDown(KeyCode.Escape) && !ManagerOptionsRef.insideSubmenu)
         {
-            if (!ManagerOptionsRef.PausePanel.activeInHierarchy)
-            {
-                ManagerOptionsRef.PausePanel.SetActive(true);
-                validar_inputs = false;
-                Time.timeScale = 0.0f;
-            }
-            else
-            {
-                ManagerOptionsRef.PausePanel.SetActive(false);
-                validar_inputs = true;
-                Time.timeScale = 1.0f;
-            }
+            bool isActive = ManagerOptionsRef.PausePanel.activeInHierarchy;
+
+            ManagerOptionsRef.PausePanel.SetActive(!isActive);
+            validar_inputs = isActive; // si estaba activo, desbloquea; si estaba cerrado, bloquea
+            Time.timeScale = isActive ? 1f : 0f;
         }
 
+    }
+
+    void DetectarMovimientoYSaltos()
+    {
         // Salto (normal + doble salto)
         if (Input.GetKeyDown(KeyCode.Space) && currentJumps > 0)
         {
@@ -121,10 +122,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // Evitar deslizamiento
-        else
-        {
-            mask_child.velocity = new Vector3(0f, mask_child.velocity.y, mask_child.velocity.z);
-        }
+        mask_child.velocity = new Vector3(0f, mask_child.velocity.y, mask_child.velocity.z);
     }
 
     private void OnCollisionEnter(Collision collision)

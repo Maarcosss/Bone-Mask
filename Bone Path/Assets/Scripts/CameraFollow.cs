@@ -2,38 +2,114 @@ using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
-    public Transform target;       // Jugador
-    public Vector3 offset = new Vector3(0, 0, -10f); // Z fijo
-    public Vector2 deadZoneSize = new Vector2(2f, 2f); // Tamaño de la zona muerta
-    public float smoothTime = 0.15f; // Suavizado
+    [Header("Target")]
+    public Transform player;
 
+    [Header("Dead Zone")]
+    public Vector2 deadZoneSize = new Vector2(3f, 2f); // ancho/alto de la zona muerta
+
+    [Header("Smoothness")]
+    public float smoothTime = 0.2f;
     private Vector3 velocity = Vector3.zero;
+
+    [Header("Offset dinámico")]
+    public float lookAheadDistance = 2f;
+    public float verticalOffset = 1f;
+
+    [Header("Mirar arriba/abajo")]
+    public float lookUpOffset = 2f;
+    public float lookDownOffset = -2f;
+    public float lookSmooth = 5f;
+    private float currentVerticalLook = 0f;
+
+    [Header("Límites del mapa")]
+    public bool useLimits = false;
+    public Vector2 minLimits;
+    public Vector2 maxLimits;
+
+    private Vector3 targetPosition;
 
     void LateUpdate()
     {
-        if (!target) return;
+        if (player == null) return;
 
-        Vector3 targetPos = target.position + offset;
-        Vector3 camPos = transform.position;
+        // Diferencia entre cámara y jugador
+        Vector3 diff = transform.position - player.position;
 
-        // Calcular diferencia
-        float deltaX = targetPos.x - camPos.x;
-        float deltaY = targetPos.y - camPos.y;
+        float offsetX = 0f;
+        float offsetY = 0f;
 
-        Vector3 desiredPosition = camPos;
-
-        // Solo mover la cámara si el jugador sale de la dead zone
-        if (Mathf.Abs(deltaX) > deadZoneSize.x)
+        // Dead zone en X
+        if (diff.x > deadZoneSize.x)
         {
-            desiredPosition.x = targetPos.x - Mathf.Sign(deltaX) * deadZoneSize.x;
+            offsetX = -deadZoneSize.x;
+        }
+        else if (diff.x < -deadZoneSize.x)
+        {
+            offsetX = deadZoneSize.x;
         }
 
-        if (Mathf.Abs(deltaY) > deadZoneSize.y)
+        // Dead zone en Y
+        if (diff.y > deadZoneSize.y)
         {
-            desiredPosition.y = targetPos.y - Mathf.Sign(deltaY) * deadZoneSize.y;
+            offsetY = -deadZoneSize.y;
+        }
+        else if (diff.y < -deadZoneSize.y)
+        {
+            offsetY = deadZoneSize.y;
         }
 
-        // Suavizado tipo Hollow Knight
-        transform.position = Vector3.SmoothDamp(camPos, desiredPosition, ref velocity, smoothTime);
+        // Look ahead en X
+        float lookAhead = 0f;
+        if (player.localScale.x > 0)
+        {
+            lookAhead = lookAheadDistance;
+        }
+        else
+        {
+            lookAhead = -lookAheadDistance;
+        }
+
+        // --- Mirar arriba y abajo (con W y S) ---
+        float targetVerticalLook = 0f;
+        if (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.S))
+        {
+            return;
+        }
+        if (Input.GetKey(KeyCode.W))
+        {
+            targetVerticalLook = lookUpOffset;
+        }
+        else if (Input.GetKey(KeyCode.S))
+        {
+            targetVerticalLook = lookDownOffset;
+        }
+
+        currentVerticalLook = currentVerticalLook + (targetVerticalLook - currentVerticalLook) * Time.deltaTime * lookSmooth;
+
+        // Posición objetivo
+        targetPosition = new Vector3(
+            player.position.x + lookAhead,
+            player.position.y + verticalOffset + currentVerticalLook,
+            transform.position.z
+        );
+
+        // Movimiento suavizado manual (sin Mathf.SmoothDamp)
+        velocity = (targetPosition - transform.position) * (Time.deltaTime / smoothTime);
+        transform.position += velocity;
+
+        // Aplicar límites si están activos
+        if (useLimits)
+        {
+            float posX = transform.position.x;
+            float posY = transform.position.y;
+
+            if (posX < minLimits.x) posX = minLimits.x;
+            if (posX > maxLimits.x) posX = maxLimits.x;
+            if (posY < minLimits.y) posY = minLimits.y;
+            if (posY > maxLimits.y) posY = maxLimits.y;
+
+            transform.position = new Vector3(posX, posY, transform.position.z);
+        }
     }
 }
