@@ -29,6 +29,8 @@ public class CameraFollow : MonoBehaviour
 
     private Vector3 targetPosition;
 
+    public bool validar_inputs_camara = true;
+
     void LateUpdate()
     {
         if (player == null) return;
@@ -72,18 +74,25 @@ public class CameraFollow : MonoBehaviour
 
         // --- Mirar arriba y abajo (con W y S) ---
         float targetVerticalLook = 0f;
-        if (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.S))
+
+        if (validar_inputs_camara)
         {
-            return;
+
+            if (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.S))
+            {
+                return;
+            }
+            if (Input.GetKey(KeyCode.W))
+            {
+                targetVerticalLook = lookUpOffset;
+            }
+            else if (Input.GetKey(KeyCode.S))
+            {
+                targetVerticalLook = lookDownOffset;
+            }
+
         }
-        if (Input.GetKey(KeyCode.W))
-        {
-            targetVerticalLook = lookUpOffset;
-        }
-        else if (Input.GetKey(KeyCode.S))
-        {
-            targetVerticalLook = lookDownOffset;
-        }
+        
 
         currentVerticalLook = currentVerticalLook + (targetVerticalLook - currentVerticalLook) * Time.deltaTime * lookSmooth;
 

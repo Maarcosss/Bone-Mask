@@ -26,6 +26,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Estados")]
     public bool validar_inputs = true;
+    public bool validar_inputs_esc = true;
     bool Contacto_Suelo = false;
     bool isJumping = false;
 
@@ -59,15 +60,21 @@ public class PlayerMovement : MonoBehaviour
 
     void DetectarEscape()
     {
-        // Escape: abre/cierra pausa solo si NO estamos dentro de un submenú
-        if (Input.GetKeyDown(KeyCode.Escape) && !ManagerOptionsRef.insideSubmenu)
-        {
-            bool isActive = ManagerOptionsRef.PausePanel.activeInHierarchy;
 
-            ManagerOptionsRef.PausePanel.SetActive(!isActive);
-            validar_inputs = isActive; // si estaba activo, desbloquea; si estaba cerrado, bloquea
-            Time.timeScale = isActive ? 1f : 0f;
-        }
+        if (validar_inputs_esc)
+        {
+
+            // Escape: abre/cierra pausa solo si NO estamos dentro de un submenú
+            if (Input.GetKeyDown(KeyCode.Escape) && !ManagerOptionsRef.insideSubmenu)
+            {
+                bool isActive = ManagerOptionsRef.PausePanel.activeInHierarchy;
+
+                ManagerOptionsRef.PausePanel.SetActive(!isActive);
+                validar_inputs = isActive; // si estaba activo, desbloquea; si estaba cerrado, bloquea
+                Time.timeScale = isActive ? 1f : 0f;
+            }
+
+        } 
 
     }
 

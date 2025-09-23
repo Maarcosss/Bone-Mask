@@ -9,6 +9,7 @@ public class Menu_Manager : MonoBehaviour
     public GameObject MainMenuPanel;
     public GameObject OptionsMainMenuPanel;
     public GameObject ExtrasPanel;
+    public GameObject GameOptionsPanel;
     public GameObject AudioPanel;
     public GameObject ControllerPanel;
     public GameObject QuitGamePanel;
@@ -43,6 +44,22 @@ public class Menu_Manager : MonoBehaviour
         OptionsMainMenuPanel.SetActive(true);
     }
 
+    public void GameOptions()
+    {
+
+        OptionsMainMenuPanel.SetActive(false);
+        GameOptionsPanel.SetActive(true);
+
+    }
+
+    public void BackGameOptions()
+    {
+
+        GameOptionsPanel.SetActive(false);
+        OptionsMainMenuPanel.SetActive(true);
+
+    }
+
     public void Audio()
     {
 
@@ -51,7 +68,7 @@ public class Menu_Manager : MonoBehaviour
         
     }
 
-    public void VolverAudio()
+    public void BackAudio()
     {
 
         AudioPanel.SetActive(false);
@@ -63,19 +80,19 @@ public class Menu_Manager : MonoBehaviour
     {
 
         OptionsMainMenuPanel.SetActive(false);
-        ControllerPanel.SetActive(false);
+        ControllerPanel.SetActive(true);
 
     }
 
-    public void VolverController()
+    public void BackController()
     {
 
         ControllerPanel.SetActive(false);
-        OptionsMainMenuPanel.SetActive(false);
+        OptionsMainMenuPanel.SetActive(true);
 
     }
 
-    public void VolverOpciones()
+    public void BackOpciones()
     {
 
         OptionsMainMenuPanel.SetActive(false);
@@ -90,7 +107,7 @@ public class Menu_Manager : MonoBehaviour
 
     }
 
-    public void VolverExtras()
+    public void BackExtras()
     {
 
         ExtrasPanel.SetActive(false);
