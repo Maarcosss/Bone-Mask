@@ -11,17 +11,35 @@ public class ManagerOptions : MonoBehaviour
     public GameObject OptionsPausePanel;
     public GameObject QuitToMenuPausePanel;
 
-    [HideInInspector] public bool insideSubmenu = false; // NUEVO: indica si estamos dentro de un submenú
+    [HideInInspector] public bool insideSubmenu = false; // indica si estamos dentro de un submenú
 
-    // Start is called before the first frame update
     void Start()
     {
-        // Asegurarse de que todos los paneles secundarios estén cerrados al inicio
+        // Cerrar paneles secundarios al inicio
         OptionsPausePanel.SetActive(false);
         QuitToMenuPausePanel.SetActive(false);
+
+        // Ocultar cursor al inicio
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
-    // Abrir menú de pausa
+    void Update()
+    {
+        // Mientras estemos en pausa o en submenú, mostrar cursor
+        if (PausePanel.activeInHierarchy || insideSubmenu)
+        {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
+        else
+        {
+            // Juego en marcha: ocultar cursor
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+    }
+
     public void Pause()
     {
         PausePanel.SetActive(true);
@@ -29,7 +47,6 @@ public class ManagerOptions : MonoBehaviour
         Time.timeScale = 0f;
     }
 
-    // Continuar juego desde pausa
     public void Continue()
     {
         PausePanel.SetActive(false);
@@ -37,7 +54,6 @@ public class ManagerOptions : MonoBehaviour
         Time.timeScale = 1f;
     }
 
-    // Abrir submenú de opciones desde pausa
     public void OptionsPause()
     {
         PausePanel.SetActive(false);
@@ -45,7 +61,6 @@ public class ManagerOptions : MonoBehaviour
         insideSubmenu = true;
     }
 
-    // Volver del submenú de opciones al panel de pausa
     public void BackOptionsPause()
     {
         OptionsPausePanel.SetActive(false);
@@ -53,7 +68,6 @@ public class ManagerOptions : MonoBehaviour
         insideSubmenu = false;
     }
 
-    // Abrir submenú de "Salir al menú" desde pausa
     public void QuitToMenuPause()
     {
         PausePanel.SetActive(false);
@@ -61,13 +75,12 @@ public class ManagerOptions : MonoBehaviour
         insideSubmenu = true;
     }
 
-    // Confirmar salida al menú principal
     public void YesQuitToMenu()
     {
+        AudioManager.instance.RefreshSlidersAndTexts();
         SceneManager.LoadScene(0);
     }
 
-    // Cancelar salida y volver al panel de pausa
     public void NoQuitToMenu()
     {
         QuitToMenuPausePanel.SetActive(false);

@@ -35,6 +35,10 @@ public class PlayerMovement : MonoBehaviour
         Time.timeScale = 1.0f;
         mask_child = GetComponent<Rigidbody>();
         currentJumps = maxJumps;
+
+        // Ocultar cursor al iniciar el juego
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     void Update()
@@ -60,23 +64,33 @@ public class PlayerMovement : MonoBehaviour
 
     void DetectarEscape()
     {
-
-        if (validar_inputs_esc)
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
-
-            // Escape: abre/cierra pausa solo si NO estamos dentro de un submenú
-            if (Input.GetKeyDown(KeyCode.Escape) && !ManagerOptionsRef.insideSubmenu)
+            // Si no estamos dentro de un submenú
+            if (!ManagerOptionsRef.insideSubmenu)
             {
+                // Alternar el panel de pausa
                 bool isActive = ManagerOptionsRef.PausePanel.activeInHierarchy;
-
                 ManagerOptionsRef.PausePanel.SetActive(!isActive);
-                validar_inputs = isActive; // si estaba activo, desbloquea; si estaba cerrado, bloquea
+                validar_inputs = isActive; // desbloquea inputs si estaba activo
                 Time.timeScale = isActive ? 1f : 0f;
+
+                // Actualizar cursor según el estado actual del panel
+                if (ManagerOptionsRef.PausePanel.activeInHierarchy)
+                {
+                    Cursor.visible = true;
+                    Cursor.lockState = CursorLockMode.None;
+                }
+                else if (!ManagerOptionsRef.PausePanel.activeInHierarchy)
+                {
+                    Cursor.visible = false;
+                    Cursor.lockState = CursorLockMode.Locked;
+                }
             }
-
-        } 
-
+        }
     }
+
+
 
     void DetectarMovimientoYSaltos()
     {
