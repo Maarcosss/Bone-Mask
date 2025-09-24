@@ -1,0 +1,35 @@
+Fix:
+ · Segundo salto únicamente impulso cosntante
+ · Salto igualitario en PCs
+ · Tutorial HUD
+ · Daño jugador al atacar
+ · Cambiar goblin party icon
+ · Camara
+ · TXT audios entre escenas
+ · Ocultar cursor pausa ESC
+ · Collider texto
+ · Full Screen, resolutions y brillo
+
+Do:
+ · Animación/Transición de escena a escena
+ · Audio valores
+ · HUD mapa
+ · HUD texto ubicaciones y boses
+ · Poner autorías scripts
+ · Poner textos mismos tamaños, títulos, subtítulos… Y CENTRADO
+ · Créditos iniciales inicio juego
+ · Oclusión culing
+ · Animación corazon curarse y daño
+ · Lanza que se clava
+ · Imagen brillo ejemplo
+ · Poner juego pantalla en ventana
+ · Atajos resolución emergency
+
+Probar:
+ · Sistema guardado/checkpoints
+ · Salto, movimiento...
+ · Camara
+ · Mirar hacia arriba y hacia abajo
+ · Mecanica de Ataque
+ · Sistema de guardado
+ · Resolutions y Brillo
