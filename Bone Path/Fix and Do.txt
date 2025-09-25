@@ -3,12 +3,12 @@ Fix:
  · Salto igualitario en PCs
  · Tutorial HUD
  · Daño jugador al atacar
- · Cambiar goblin party icon
  · Camara
  · TXT audios entre escenas
  · Ocultar cursor pausa ESC
- · Collider texto
+ · Collider texto ajustar
  · Full Screen, resolutions y brillo
+ · ESC cuando hay dialogo
 
 Do:
  · Animación/Transición de escena a escena
@@ -24,6 +24,9 @@ Do:
  · Imagen brillo ejemplo
  · Poner juego pantalla en ventana
  · Atajos resolución emergency
+ · Aplicar cambios entre escenas, graficos, resolución, audio, controles...
+ · Nueva estética main menú
+ · Márgenes seguros textos y medidas separaciones iguales
 
 Probar:
  · Sistema guardado/checkpoints
@@ -32,4 +35,3 @@ Probar:
  · Mirar hacia arriba y hacia abajo
  · Mecanica de Ataque
  · Sistema de guardado
- · Resolutions y Brillo

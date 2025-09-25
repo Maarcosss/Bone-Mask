@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -30,16 +31,117 @@ public class PlayerHealth : MonoBehaviour
     private bool isInvincible = false;
     private float invincibleTime = 1.0f;
     private float invincibleTimer = 0f;
+
+    [Header("Input System")]
+    public InputActionAsset inputActions;
+
+    // Input actions
+    private InputAction healAction;
+    private InputAction debugDamageAction; // Optional for testing
+
+    // Input values
+    private bool healPressed;
+    private bool healHeld;
+
     public int GetCurrentHealth() => currentHealth;
     public float GetCurrentSoul() => currentSoul;
 
-    
     void Start()
     {
         // ajustar por si currentSoul > maxSoul
         if (currentSoul > maxSoul) currentSoul = maxSoul;
         UpdateHeartsUI();
         UpdateSoulUI(); // opcional (implementa esta función para mostrar barra de alma)
+
+        // Setup Input System
+        SetupInputActions();
+    }
+
+    void SetupInputActions()
+    {
+        // If no input asset is assigned, try to find the one in your project
+        if (inputActions == null)
+        {
+            inputActions = Resources.Load<InputActionAsset>("InputSystem_Actions");
+        }
+
+        if (inputActions != null)
+        {
+            // Get actions from the Player action map
+            var playerActionMap = inputActions.FindActionMap("Player");
+
+            if (playerActionMap != null)
+            {
+                // Try to use the existing Interact action for healing
+                healAction = playerActionMap.FindAction("Interact");
+
+                // Create debug damage action (optional)
+                debugDamageAction = new InputAction("DebugDamage", InputActionType.Button);
+                debugDamageAction.AddBinding("<Keyboard>/h");
+            }
+        }
+
+        // Fallback: create heal action manually if not found
+        if (healAction == null)
+        {
+            healAction = new InputAction("Heal", InputActionType.Button);
+            healAction.AddBinding("<Keyboard>/e");
+            healAction.AddBinding("<Gamepad>/buttonWest"); // Y/Triangle button
+        }
+
+        if (debugDamageAction == null)
+        {
+            debugDamageAction = new InputAction("DebugDamage", InputActionType.Button);
+            debugDamageAction.AddBinding("<Keyboard>/h");
+        }
+
+        // Setup input callbacks
+        SetupInputCallbacks();
+
+        // Enable actions
+        EnableInputActions();
+    }
+
+    void SetupInputCallbacks()
+    {
+        healAction.started += OnHealStarted;
+        healAction.canceled += OnHealCanceled;
+
+        // Optional debug damage (remove in final build)
+        debugDamageAction.started += OnDebugDamage;
+    }
+
+    void EnableInputActions()
+    {
+        healAction?.Enable();
+        debugDamageAction?.Enable();
+    }
+
+    void DisableInputActions()
+    {
+        healAction?.Disable();
+        debugDamageAction?.Disable();
+    }
+
+    void OnDestroy()
+    {
+        DisableInputActions();
+    }
+
+    void OnHealStarted(InputAction.CallbackContext context)
+    {
+        healHeld = true;
+    }
+
+    void OnHealCanceled(InputAction.CallbackContext context)
+    {
+        healHeld = false;
+    }
+
+    void OnDebugDamage(InputAction.CallbackContext context)
+    {
+        // TEST rápido: perder vida con H (para debug)
+        TakeDamage(1);
     }
 
     void Update()
@@ -54,8 +156,8 @@ public class PlayerHealth : MonoBehaviour
             }
         }
 
-        // Comenzar o mantener curación con E
-        if (Input.GetKey(KeyCode.E))
+        // Comenzar o mantener curación con Input System
+        if (healHeld)
         {
             // Solo si no estás full health y tienes alma suficiente para una curación
             if (currentHealth < maxHealth && HasEnoughSoulForOneHeal())
@@ -111,12 +213,6 @@ public class PlayerHealth : MonoBehaviour
                 Debug.Log("Curación interrumpida (soltaste E)");
             }
         }
-
-        // TEST rápido: perder vida con H (para debug)
-        if (Input.GetKeyDown(KeyCode.H))
-        {
-            TakeDamage(1);
-        }
     }
 
     public void SetCurrentHealth(int value)
@@ -145,7 +241,7 @@ public class PlayerHealth : MonoBehaviour
             UpdateHeartsUI();
             UpdateSoulUI();
 
-            Debug.Log("Curó 1 corazón. Alma restante: " + currentSoul);
+            Debug.Log("Curé 1 corazón. Alma restante: " + currentSoul);
         }
         else
         {

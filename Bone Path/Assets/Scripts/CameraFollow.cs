@@ -1,124 +1,344 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CameraFollow : MonoBehaviour
 {
     [Header("Target")]
     public Transform player;
 
-    [Header("Dead Zone")]
-    public Vector2 deadZoneSize = new Vector2(3f, 2f); // ancho/alto de la zona muerta
+    [Header("Dead Zone (Hollow Knight Style)")]
+    [Tooltip("Horizontal dead zone - camera won't move until player exits this area")]
+    public float deadZoneWidth = 4f;
+    [Tooltip("Vertical dead zone - camera won't move until player exits this area")]
+    public float deadZoneHeight = 2f;
+    [Tooltip("Show dead zone in Scene view for debugging")]
+    public bool showDeadZoneGizmo = true;
 
-    [Header("Smoothness")]
-    public float smoothTime = 0.2f;
+    [Header("Camera Follow Settings")]
+    [Tooltip("How fast camera follows when player exits dead zone")]
+    public float followSpeed = 2f;
+    [Tooltip("Smoothing factor for camera movement (lower = smoother)")]
+    public float smoothDamping = 0.3f;
     private Vector3 velocity = Vector3.zero;
 
-    [Header("Offset dinámico")]
-    public float lookAheadDistance = 2f;
-    public float verticalOffset = 1f;
+    [Header("Look Ahead System")]
+    [Tooltip("How far ahead to look when player is moving")]
+    public float lookAheadDistance = 3f;
+    [Tooltip("How fast to apply look ahead")]
+    public float lookAheadSmooth = 2f;
+    [Tooltip("Minimum player speed to trigger look ahead")]
+    public float lookAheadThreshold = 0.1f;
+    private float currentLookAhead = 0f;
 
-    [Header("Mirar arriba/abajo")]
-    public float lookUpOffset = 2f;
-    public float lookDownOffset = -2f;
-    public float lookSmooth = 5f;
+    [Header("Vertical Look Controls")]
+    [Tooltip("How far up the camera moves when looking up")]
+    public float lookUpOffset = 3f;
+    [Tooltip("How far down the camera moves when looking down")]
+    public float lookDownOffset = -3f;
+    [Tooltip("How fast vertical look interpolates")]
+    public float verticalLookSpeed = 3f;
     private float currentVerticalLook = 0f;
 
-    [Header("Límites del mapa")]
-    public bool useLimits = false;
-    public Vector2 minLimits;
-    public Vector2 maxLimits;
+    [Header("Camera Boundaries")]
+    public bool useCameraBounds = false;
+    [Tooltip("Camera won't go beyond these boundaries")]
+    public Vector2 minBounds;
+    public Vector2 maxBounds;
 
+    [Header("Hollow Knight Features")]
+    [Tooltip("Slight upward bias to focus on what's ahead")]
+    public float verticalBias = 0.5f;
+    [Tooltip("How fast camera snaps to new focus points")]
+    public float focusSnapSpeed = 1f;
+
+    [Header("Input System")]
+    public InputActionAsset inputActions;
+
+    // Input actions
+    private InputAction lookAction;
+    private InputAction cameraAction;
+
+    // Input values
+    private Vector2 lookInput;
+    private float cameraInput;
+
+    // Camera state
     private Vector3 targetPosition;
+    private Vector3 deadZoneCenter;
+    private Rigidbody playerRb;
 
     public bool validar_inputs_camara = true;
+
+    void Start()
+    {
+        SetupInputActions();
+
+        // Get player rigidbody for velocity calculations
+        if (player != null)
+        {
+            playerRb = player.GetComponent<Rigidbody>();
+            deadZoneCenter = player.position;
+        }
+    }
+
+    void SetupInputActions()
+    {
+        if (inputActions == null)
+        {
+            inputActions = Resources.Load<InputActionAsset>("InputSystem_Actions");
+        }
+
+        if (inputActions != null)
+        {
+            var playerActionMap = inputActions.FindActionMap("Player");
+            if (playerActionMap != null)
+            {
+                lookAction = playerActionMap.FindAction("Look");
+            }
+        }
+
+        // Create separate camera action for keyboard W/S only
+        cameraAction = new InputAction("CameraVertical", InputActionType.Value, expectedControlType: "Axis");
+        cameraAction.AddCompositeBinding("1DAxis")
+            .With("Positive", "<Keyboard>/w")
+            .With("Negative", "<Keyboard>/s");
+
+        // Fallback for look action
+        if (lookAction == null)
+        {
+            lookAction = new InputAction("Look", InputActionType.Value, expectedControlType: "Vector2");
+            lookAction.AddBinding("<Gamepad>/rightStick");
+        }
+
+        SetupInputCallbacks();
+        EnableInputActions();
+    }
+
+    void SetupInputCallbacks()
+    {
+        lookAction.performed += OnLook;
+        lookAction.canceled += OnLook;
+        cameraAction.performed += OnCameraVertical;
+        cameraAction.canceled += OnCameraVertical;
+    }
+
+    void EnableInputActions()
+    {
+        lookAction?.Enable();
+        cameraAction?.Enable();
+    }
+
+    void DisableInputActions()
+    {
+        lookAction?.Disable();
+        cameraAction?.Disable();
+    }
+
+    void OnDestroy()
+    {
+        DisableInputActions();
+    }
+
+    void OnLook(InputAction.CallbackContext context)
+    {
+        lookInput = context.ReadValue<Vector2>();
+    }
+
+    void OnCameraVertical(InputAction.CallbackContext context)
+    {
+        cameraInput = context.ReadValue<float>();
+    }
 
     void LateUpdate()
     {
         if (player == null) return;
 
-        // Diferencia entre cámara y jugador
-        Vector3 diff = transform.position - player.position;
+        UpdateDeadZone();
+        UpdateLookAhead();
+        UpdateVerticalLook();
+        UpdateCameraPosition();
+        ApplyBounds();
+    }
 
-        float offsetX = 0f;
-        float offsetY = 0f;
+    void UpdateDeadZone()
+    {
+        Vector3 playerPos = player.position;
+        Vector3 cameraPos = transform.position;
 
-        // Dead zone en X
-        if (diff.x > deadZoneSize.x)
+        // Calculate dead zone boundaries
+        float leftBound = deadZoneCenter.x - deadZoneWidth * 0.5f;
+        float rightBound = deadZoneCenter.x + deadZoneWidth * 0.5f;
+        float bottomBound = deadZoneCenter.y - deadZoneHeight * 0.5f;
+        float topBound = deadZoneCenter.y + deadZoneHeight * 0.5f;
+
+        // Check if player is outside dead zone
+        Vector3 newDeadZoneCenter = deadZoneCenter;
+
+        // Horizontal dead zone check
+        if (playerPos.x < leftBound)
         {
-            offsetX = -deadZoneSize.x;
+            newDeadZoneCenter.x = playerPos.x + deadZoneWidth * 0.5f;
         }
-        else if (diff.x < -deadZoneSize.x)
+        else if (playerPos.x > rightBound)
         {
-            offsetX = deadZoneSize.x;
+            newDeadZoneCenter.x = playerPos.x - deadZoneWidth * 0.5f;
         }
 
-        // Dead zone en Y
-        if (diff.y > deadZoneSize.y)
+        // Vertical dead zone check
+        if (playerPos.y < bottomBound)
         {
-            offsetY = -deadZoneSize.y;
+            newDeadZoneCenter.y = playerPos.y + deadZoneHeight * 0.5f;
         }
-        else if (diff.y < -deadZoneSize.y)
+        else if (playerPos.y > topBound)
         {
-            offsetY = deadZoneSize.y;
+            newDeadZoneCenter.y = playerPos.y - deadZoneHeight * 0.5f;
         }
 
-        // Look ahead en X
-        float lookAhead = 0f;
-        if (player.localScale.x > 0)
+        // Smoothly move dead zone center
+        deadZoneCenter = Vector3.Lerp(deadZoneCenter, newDeadZoneCenter, Time.deltaTime * followSpeed);
+    }
+
+    void UpdateLookAhead()
+    {
+        float targetLookAhead = 0f;
+
+        if (playerRb != null)
         {
-            lookAhead = lookAheadDistance;
+            // Use velocity for more responsive look ahead
+            float horizontalVelocity = playerRb.velocity.x;
+
+            if (Mathf.Abs(horizontalVelocity) > lookAheadThreshold)
+            {
+                targetLookAhead = Mathf.Sign(horizontalVelocity) * lookAheadDistance;
+            }
         }
         else
         {
-            lookAhead = -lookAheadDistance;
+            // Fallback: use player scale for direction
+            if (player.localScale.x > 0)
+            {
+                targetLookAhead = lookAheadDistance;
+            }
+            else if (player.localScale.x < 0)
+            {
+                targetLookAhead = -lookAheadDistance;
+            }
         }
 
-        // --- Mirar arriba y abajo (con W y S) ---
+        currentLookAhead = Mathf.Lerp(currentLookAhead, targetLookAhead, Time.deltaTime * lookAheadSmooth);
+    }
+
+    void UpdateVerticalLook()
+    {
         float targetVerticalLook = 0f;
 
         if (validar_inputs_camara)
         {
+            // Keyboard input takes priority
+            if (Mathf.Abs(cameraInput) > 0.1f)
+            {
+                if (cameraInput > 0)
+                {
+                    targetVerticalLook = lookUpOffset;
+                }
+                else
+                {
+                    targetVerticalLook = lookDownOffset;
+                }
+            }
+            // Controller right stick input
+            else if (Mathf.Abs(lookInput.y) > 0.1f)
+            {
+                float stickInput = -lookInput.y; // Inverted for natural feel
 
-            if (Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.S))
-            {
-                return;
+                if (stickInput > 0)
+                {
+                    targetVerticalLook = stickInput * lookUpOffset;
+                }
+                else
+                {
+                    targetVerticalLook = stickInput * Mathf.Abs(lookDownOffset);
+                }
             }
-            if (Input.GetKey(KeyCode.W))
-            {
-                targetVerticalLook = lookUpOffset;
-            }
-            else if (Input.GetKey(KeyCode.S))
-            {
-                targetVerticalLook = lookDownOffset;
-            }
-
         }
-        
 
-        currentVerticalLook = currentVerticalLook + (targetVerticalLook - currentVerticalLook) * Time.deltaTime * lookSmooth;
+        currentVerticalLook = Mathf.Lerp(currentVerticalLook, targetVerticalLook, Time.deltaTime * verticalLookSpeed);
+    }
 
-        // Posición objetivo
+    void UpdateCameraPosition()
+    {
+        // Calculate target position based on dead zone center + look ahead + vertical look + bias
         targetPosition = new Vector3(
-            player.position.x + lookAhead,
-            player.position.y + verticalOffset + currentVerticalLook,
+            deadZoneCenter.x + currentLookAhead,
+            deadZoneCenter.y + currentVerticalLook + verticalBias,
             transform.position.z
         );
 
-        // Movimiento suavizado manual (sin Mathf.SmoothDamp)
-        velocity = (targetPosition - transform.position) * (Time.deltaTime / smoothTime);
-        transform.position += velocity;
+        // Smooth camera movement using SmoothDamp for Hollow Knight-like feel
+        transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref velocity, smoothDamping);
+    }
 
-        // Aplicar límites si están activos
-        if (useLimits)
+    void ApplyBounds()
+    {
+        if (!useCameraBounds) return;
+
+        Vector3 pos = transform.position;
+        pos.x = Mathf.Clamp(pos.x, minBounds.x, maxBounds.x);
+        pos.y = Mathf.Clamp(pos.y, minBounds.y, maxBounds.y);
+        transform.position = pos;
+    }
+
+    // Gizmos for visualizing dead zone in Scene view
+    void OnDrawGizmosSelected()
+    {
+        if (!showDeadZoneGizmo) return;
+
+        if (Application.isPlaying)
         {
-            float posX = transform.position.x;
-            float posY = transform.position.y;
+            // Draw current dead zone
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireCube(deadZoneCenter, new Vector3(deadZoneWidth, deadZoneHeight, 0f));
 
-            if (posX < minLimits.x) posX = minLimits.x;
-            if (posX > maxLimits.x) posX = maxLimits.x;
-            if (posY < minLimits.y) posY = minLimits.y;
-            if (posY > maxLimits.y) posY = maxLimits.y;
-
-            transform.position = new Vector3(posX, posY, transform.position.z);
+            // Draw target position
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(targetPosition, 0.2f);
         }
+        else if (player != null)
+        {
+            // Draw initial dead zone in edit mode
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireCube(player.position, new Vector3(deadZoneWidth, deadZoneHeight, 0f));
+        }
+    }
+
+    // Public methods for external control (like room transitions)
+    public void SetDeadZoneCenter(Vector3 newCenter)
+    {
+        deadZoneCenter = newCenter;
+    }
+
+    public void FocusOnPosition(Vector3 focusPoint, float focusTime = 1f)
+    {
+        StartCoroutine(FocusCoroutine(focusPoint, focusTime));
+    }
+
+    private System.Collections.IEnumerator FocusCoroutine(Vector3 focusPoint, float focusTime)
+    {
+        Vector3 originalTarget = targetPosition;
+        float elapsed = 0f;
+
+        while (elapsed < focusTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / focusTime;
+
+            Vector3 focusTarget = new Vector3(focusPoint.x, focusPoint.y, transform.position.z);
+            transform.position = Vector3.Lerp(originalTarget, focusTarget, t * focusSnapSpeed);
+
+            yield return null;
+        }
+
+        // Reset dead zone to new focus point
+        deadZoneCenter = focusPoint;
     }
 }

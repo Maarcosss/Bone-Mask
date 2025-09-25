@@ -11,7 +11,7 @@ public class ManagerOptions : MonoBehaviour
     public GameObject OptionsPausePanel;
     public GameObject QuitToMenuPausePanel;
 
-    [HideInInspector] public bool insideSubmenu = false; // indica si estamos dentro de un submenú
+    [HideInInspector] public bool insideSubmenu = false;
 
     void Start()
     {
@@ -24,27 +24,15 @@ public class ManagerOptions : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
     }
 
-    void Update()
-    {
-        // Mientras estemos en pausa o en submenú, mostrar cursor
-        if (PausePanel.activeInHierarchy || insideSubmenu)
-        {
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
-        }
-        else
-        {
-            // Juego en marcha: ocultar cursor
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-        }
-    }
-
     public void Pause()
     {
         PausePanel.SetActive(true);
         PlayerMovementRef.validar_inputs = false;
         Time.timeScale = 0f;
+
+        // Show cursor when pausing
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void Continue()
@@ -52,6 +40,38 @@ public class ManagerOptions : MonoBehaviour
         PausePanel.SetActive(false);
         PlayerMovementRef.validar_inputs = true;
         Time.timeScale = 1f;
+
+        // Aggressively hide cursor - multiple attempts
+        StartCoroutine(AggressiveHideCursor());
+    }
+
+    private IEnumerator AggressiveHideCursor()
+    {
+        Debug.Log("Starting aggressive cursor hide");
+
+        // Immediate hide
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+
+        // Wait and hide again multiple times
+        for (int i = 0; i < 10; i++)
+        {
+            yield return null; // Wait one frame
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+            Debug.Log($"Aggressive hide attempt {i + 1}");
+        }
+
+        // Final attempts with different timing
+        yield return new WaitForEndOfFrame();
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+
+        yield return new WaitForSeconds(0.1f);
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+
+        Debug.Log($"Final cursor state - Visible: {Cursor.visible}, LockState: {Cursor.lockState}");
     }
 
     public void OptionsPause()
@@ -59,6 +79,9 @@ public class ManagerOptions : MonoBehaviour
         PausePanel.SetActive(false);
         OptionsPausePanel.SetActive(true);
         insideSubmenu = true;
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void BackOptionsPause()
@@ -66,6 +89,9 @@ public class ManagerOptions : MonoBehaviour
         OptionsPausePanel.SetActive(false);
         PausePanel.SetActive(true);
         insideSubmenu = false;
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void QuitToMenuPause()
@@ -73,6 +99,9 @@ public class ManagerOptions : MonoBehaviour
         PausePanel.SetActive(false);
         QuitToMenuPausePanel.SetActive(true);
         insideSubmenu = true;
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void YesQuitToMenu()
@@ -86,5 +115,8 @@ public class ManagerOptions : MonoBehaviour
         QuitToMenuPausePanel.SetActive(false);
         PausePanel.SetActive(true);
         insideSubmenu = false;
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 }
