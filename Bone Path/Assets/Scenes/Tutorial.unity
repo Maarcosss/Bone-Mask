@@ -1782,16 +1782,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 1146783675}
-  deadZoneSize: {x: 2, y: 2}
-  smoothTime: 0.2
+  deadZoneWidth: 4
+  deadZoneHeight: 2
+  showDeadZoneGizmo: 1
+  followSpeed: 2
+  smoothDamping: 0.3
   lookAheadDistance: 0
-  verticalOffset: 2
+  lookAheadSmooth: 2
+  lookAheadThreshold: 0.1
   lookUpOffset: 2
   lookDownOffset: -2
-  lookSmooth: 5
-  useLimits: 0
-  minLimits: {x: 0, y: 0}
-  maxLimits: {x: 0, y: 0}
+  verticalLookSpeed: 3
+  useCameraBounds: 0
+  minBounds: {x: 0, y: 0}
+  maxBounds: {x: 0, y: 0}
+  verticalBias: 0.5
+  focusSnapSpeed: 1
+  inputActions: {fileID: 0}
   validar_inputs_camara: 1
 --- !u!1 &859759615
 GameObject:
@@ -2502,13 +2509,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ManagerOptionsRef: {fileID: 1574424128}
   Speed: 5
-  JumpForce: 18
-  extraGravity: 10
-  shortJumpMultiplier: 15
+  JumpForce: 20
+  extraGravity: 9
+  shortJumpMultiplier: 10
   maxJumpTime: 0.05
   maxJumps: 2
   validar_inputs: 1
   validar_inputs_esc: 1
+  inputActions: {fileID: 0}
 --- !u!136 &1146783677
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -2630,6 +2638,7 @@ MonoBehaviour:
   currentSoul: 0
   healCostPercent: 0.5
   healTime: 1
+  inputActions: {fileID: 0}
 --- !u!114 &1146783682
 MonoBehaviour:
   m_ObjectHideFlags: 0
