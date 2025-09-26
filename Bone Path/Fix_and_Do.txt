@@ -9,7 +9,8 @@ Fix:
  · DropDown interactuable mando
  · Cambiar controles mando
  · Debugs Logs and logserros
-
+ · NPC no funca na
+ · Quitar daño jugador collision enemigo
 Do:
  · Animación/Transición de escena a escena
  · Audio valores

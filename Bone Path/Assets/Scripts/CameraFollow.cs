@@ -40,19 +40,19 @@ public class CameraFollow : MonoBehaviour
     private float vistaVerticalActual = 0f;
 
     [Header("🕒 Sistema de Cooldown Vista Vertical")]
-    [Tooltip("Tiempo de cooldown entre usos de vista vertical (en segundos)")]
-    public float cooldownVistaVertical = 0.8f;
+    [Tooltip("Tiempo de cooldown entre activaciones de vista vertical (en segundos)")]
+    public float cooldownVistaVertical = 0.5f;
     [Tooltip("Tiempo mínimo que debe mantener presionado para activar vista vertical")]
-    public float tiempoMantenerPresionado = 0.15f;
+    public float tiempoMantenerPresionado = 0.1f;
     [Tooltip("Mostrar logs de debug para el cooldown")]
-    public bool mostrarDebugCooldown = false;
+    public bool mostrarDebugCooldown = true;
 
-    // Variables del sistema de cooldown
+    // Variables del sistema de cooldown - SIMPLIFICADO
     private float timerCooldownVertical = 0f;
     private float timerMantenerPresionado = 0f;
-    private bool vistaVerticalActivada = false;
-    private bool inputVerticalAnterior = false;
-    private float direccionVistaAnterior = 0f;
+    private bool puedeUsarVistaVertical = true;
+    private bool inputManteniendose = false;
+    private float direccionActual = 0f;
 
     [Header("Límites de Cámara")]
     public bool usarLimitesCamara = false;
@@ -112,11 +112,11 @@ public class CameraFollow : MonoBehaviour
             }
         }
 
-        // Crear acción de cámara separada para teclado W/S - CONTROLES INVERTIDOS
+        // ✅ CONTROLES CORREGIDOS - W=ARRIBA, S=ABAJO
         accionCamara = new InputAction("CamaraVertical", InputActionType.Value, expectedControlType: "Axis");
         accionCamara.AddCompositeBinding("1DAxis")
-            .With("Positive", "<Keyboard>/s")    // S ahora mueve cámara ARRIBA
-            .With("Negative", "<Keyboard>/w");   // W ahora mueve cámara ABAJO
+            .With("Positive", "<Keyboard>/w")    // W mueve cámara ARRIBA
+            .With("Negative", "<Keyboard>/s");   // S mueve cámara ABAJO
 
         // Respaldo para acción de mirar
         if (accionMirar == null)
@@ -162,11 +162,14 @@ public class CameraFollow : MonoBehaviour
     void AlCamaraVertical(InputAction.CallbackContext context)
     {
         inputCamara = context.ReadValue<float>();
+
+        if (mostrarDebugCooldown)
+            Debug.Log($"🎮 Input Cámara: {inputCamara}");
     }
 
     void Update()
     {
-        // 🕒 ACTUALIZAR COOLDOWN DE VISTA VERTICAL
+        // 🕒 ACTUALIZAR COOLDOWN DE VISTA VERTICAL - SIMPLIFICADO
         ActualizarCooldownVistaVertical();
     }
 
@@ -176,6 +179,12 @@ public class CameraFollow : MonoBehaviour
         if (timerCooldownVertical > 0f)
         {
             timerCooldownVertical -= Time.deltaTime;
+            if (timerCooldownVertical <= 0f)
+            {
+                puedeUsarVistaVertical = true;
+                if (mostrarDebugCooldown)
+                    Debug.Log("✅ Cooldown vista vertical terminado - Disponible nuevamente");
+            }
         }
 
         // Verificar si hay input vertical activo
@@ -189,68 +198,74 @@ public class CameraFollow : MonoBehaviour
             {
                 hayInputVertical = true;
                 direccionInput = Mathf.Sign(inputCamara);
+
+                if (mostrarDebugCooldown)
+                    Debug.Log($"🎯 Input teclado detectado: {direccionInput} (W=+1, S=-1)");
             }
             // Input del stick derecho del controlador
             else if (Mathf.Abs(inputMirar.y) > 0.1f)
             {
                 hayInputVertical = true;
                 direccionInput = Mathf.Sign(inputMirar.y);
+
+                if (mostrarDebugCooldown)
+                    Debug.Log($"🎮 Input stick detectado: {direccionInput}");
             }
         }
 
-        // 🔄 LÓGICA DEL SISTEMA DE COOLDOWN
+        // 🚀 LÓGICA SIMPLIFICADA DEL COOLDOWN
         if (hayInputVertical)
         {
-            // Si el input cambió de dirección, resetear
-            if (inputVerticalAnterior && direccionInput != direccionVistaAnterior)
+            // Si no estaba manteniendo input antes, empezar contador
+            if (!inputManteniendose)
             {
                 timerMantenerPresionado = 0f;
-                vistaVerticalActivada = false;
+                direccionActual = direccionInput;
+                inputManteniendose = true;
 
                 if (mostrarDebugCooldown)
-                    Debug.Log("🔄 Dirección de vista vertical cambiada - Reset");
+                    Debug.Log($"⏱️ Iniciando timer vista vertical - Dirección: {(direccionInput > 0 ? "ARRIBA" : "ABAJO")}");
             }
 
-            // Si no estaba presionado antes, empezar contador
-            if (!inputVerticalAnterior)
+            // Si cambió la dirección, resetear
+            if (direccionInput != direccionActual)
             {
                 timerMantenerPresionado = 0f;
-                vistaVerticalActivada = false;
+                direccionActual = direccionInput;
 
                 if (mostrarDebugCooldown)
-                    Debug.Log("⏱️ Iniciando contador vista vertical");
+                    Debug.Log($"🔄 Cambio de dirección - Nueva: {(direccionInput > 0 ? "ARRIBA" : "ABAJO")}");
             }
 
-            // Incrementar timer de mantener presionado
+            // Incrementar timer
             timerMantenerPresionado += Time.deltaTime;
 
-            // Activar vista vertical si cumple las condiciones
-            if (!vistaVerticalActivada &&
-                timerMantenerPresionado >= tiempoMantenerPresionado &&
-                timerCooldownVertical <= 0f)
+            // ✅ VERIFICAR SI PUEDE ACTIVAR VISTA VERTICAL
+            if (timerMantenerPresionado >= tiempoMantenerPresionado && puedeUsarVistaVertical)
             {
-                vistaVerticalActivada = true;
-                timerCooldownVertical = cooldownVistaVertical;
-                direccionVistaAnterior = direccionInput;
+                // Activar cooldown
+                if (puedeUsarVistaVertical)
+                {
+                    puedeUsarVistaVertical = false;
+                    timerCooldownVertical = cooldownVistaVertical;
 
-                if (mostrarDebugCooldown)
-                    Debug.Log($"✅ Vista vertical activada - Dirección: {(direccionInput > 0 ? "ARRIBA" : "ABAJO")}");
+                    if (mostrarDebugCooldown)
+                        Debug.Log($"🚀 Vista vertical ACTIVADA - Cooldown iniciado ({cooldownVistaVertical}s)");
+                }
             }
         }
         else
         {
-            // No hay input, resetear contadores
-            if (inputVerticalAnterior)
+            // No hay input, resetear
+            if (inputManteniendose)
             {
+                inputManteniendose = false;
                 timerMantenerPresionado = 0f;
-                vistaVerticalActivada = false;
 
                 if (mostrarDebugCooldown)
-                    Debug.Log("🛑 Input vertical cancelado");
+                    Debug.Log("🛑 Input cancelado - Vista vertical reseteada");
             }
         }
-
-        inputVerticalAnterior = hayInputVertical;
     }
 
     void LateUpdate()
@@ -318,14 +333,14 @@ public class CameraFollow : MonoBehaviour
         }
         else
         {
-            // Respaldo: usar escala del jugador para dirección
-            if (jugador.localScale.x > 0)
+            // Respaldo: usar rotación del jugador para dirección
+            if (jugador.rotation.eulerAngles.y < 90f || jugador.rotation.eulerAngles.y > 270f)
             {
-                lookAheadObjetivo = distanciaLookAhead;
+                lookAheadObjetivo = distanciaLookAhead; // Mirando derecha
             }
-            else if (jugador.localScale.x < 0)
+            else
             {
-                lookAheadObjetivo = -distanciaLookAhead;
+                lookAheadObjetivo = -distanciaLookAhead; // Mirando izquierda
             }
         }
 
@@ -336,25 +351,29 @@ public class CameraFollow : MonoBehaviour
     {
         float vistaVerticalObjetivo = 0f;
 
-        // 🕒 SOLO APLICAR VISTA VERTICAL SI ESTÁ ACTIVADA Y EN COOLDOWN
-        if (validar_inputs_camara && vistaVerticalActivada)
+        // ✅ FUNCIONA DURANTE EL TIEMPO DE MANTENER PRESIONADO + DESPUÉS DEL COOLDOWN
+        if (validar_inputs_camara && inputManteniendose &&
+            (timerMantenerPresionado >= tiempoMantenerPresionado || !puedeUsarVistaVertical))
         {
             // El input de teclado tiene prioridad
             if (Mathf.Abs(inputCamara) > 0.1f)
             {
                 if (inputCamara > 0)
                 {
-                    vistaVerticalObjetivo = desplazamientoMirarArriba;    // S = cámara arriba
+                    vistaVerticalObjetivo = desplazamientoMirarArriba;    // W = cámara arriba
                 }
                 else
                 {
-                    vistaVerticalObjetivo = desplazamientoMirarAbajo;     // W = cámara abajo  
+                    vistaVerticalObjetivo = desplazamientoMirarAbajo;     // S = cámara abajo  
                 }
+
+                if (mostrarDebugCooldown)
+                    Debug.Log($"📹 Vista vertical aplicada: {vistaVerticalObjetivo}");
             }
             // Input del stick derecho del controlador - SIN INVERSIÓN
             else if (Mathf.Abs(inputMirar.y) > 0.1f)
             {
-                float inputStick = inputMirar.y; // QUITADA LA INVERSIÓN
+                float inputStick = inputMirar.y;
 
                 if (inputStick > 0)
                 {
@@ -366,6 +385,9 @@ public class CameraFollow : MonoBehaviour
                     // Stick abajo = cámara abajo
                     vistaVerticalObjetivo = inputStick * Mathf.Abs(desplazamientoMirarAbajo);
                 }
+
+                if (mostrarDebugCooldown)
+                    Debug.Log($"📹 Vista vertical stick aplicada: {vistaVerticalObjetivo}");
             }
         }
 
@@ -398,7 +420,7 @@ public class CameraFollow : MonoBehaviour
     // 🕒 MÉTODOS PÚBLICOS PARA EL SISTEMA DE COOLDOWN
     public bool EstaEnCooldownVertical()
     {
-        return timerCooldownVertical > 0f;
+        return !puedeUsarVistaVertical;
     }
 
     public float GetCooldownVerticalRestante()
@@ -410,15 +432,11 @@ public class CameraFollow : MonoBehaviour
     {
         timerCooldownVertical = 0f;
         timerMantenerPresionado = 0f;
-        vistaVerticalActivada = false;
+        puedeUsarVistaVertical = true;
+        inputManteniendose = false;
 
         if (mostrarDebugCooldown)
             Debug.Log("🔄 Cooldown vista vertical reseteado manualmente");
-    }
-
-    public bool EstaVistaVerticalActivada()
-    {
-        return vistaVerticalActivada;
     }
 
     // Gizmos para visualizar zona muerta en vista de escena
@@ -442,7 +460,7 @@ public class CameraFollow : MonoBehaviour
                 Gizmos.color = Color.red;
                 Gizmos.DrawWireCube(transform.position + Vector3.up * 2f, Vector3.one * 0.3f);
             }
-            else if (vistaVerticalActivada)
+            else if (inputManteniendose)
             {
                 Gizmos.color = Color.green;
                 Gizmos.DrawWireCube(transform.position + Vector3.up * 2f, Vector3.one * 0.3f);
