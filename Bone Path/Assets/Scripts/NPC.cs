@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 
 public class NPC : MonoBehaviour
@@ -7,7 +7,7 @@ public class NPC : MonoBehaviour
     [TextArea]
     public string[] dialogueLines;
 
-    [Header("Interacci�n")]
+    [Header("Interacción")]
     public KeyCode interactKey = KeyCode.T;
 
     [Header("Referencias")]

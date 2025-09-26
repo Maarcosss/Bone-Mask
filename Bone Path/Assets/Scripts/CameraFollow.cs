@@ -1,344 +1,489 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class CameraFollow : MonoBehaviour
 {
-    [Header("Target")]
-    public Transform player;
+    [Header("Objetivo")]
+    public Transform jugador;
 
-    [Header("Dead Zone (Hollow Knight Style)")]
-    [Tooltip("Horizontal dead zone - camera won't move until player exits this area")]
-    public float deadZoneWidth = 4f;
-    [Tooltip("Vertical dead zone - camera won't move until player exits this area")]
-    public float deadZoneHeight = 2f;
-    [Tooltip("Show dead zone in Scene view for debugging")]
-    public bool showDeadZoneGizmo = true;
+    [Header("Zona Muerta (Estilo Hollow Knight)")]
+    [Tooltip("Zona muerta horizontal - la cámara no se moverá hasta que el jugador salga de esta área")]
+    public float anchoZonaMuerta = 4f;
+    [Tooltip("Zona muerta vertical - la cámara no se moverá hasta que el jugador salga de esta área")]
+    public float altoZonaMuerta = 2f;
+    [Tooltip("Mostrar zona muerta en la vista de escena para depuración")]
+    public bool mostrarGizmoZonaMuerta = true;
 
-    [Header("Camera Follow Settings")]
-    [Tooltip("How fast camera follows when player exits dead zone")]
-    public float followSpeed = 2f;
-    [Tooltip("Smoothing factor for camera movement (lower = smoother)")]
-    public float smoothDamping = 0.3f;
-    private Vector3 velocity = Vector3.zero;
+    [Header("Configuración de Seguimiento de Cámara")]
+    [Tooltip("Qué tan rápido sigue la cámara cuando el jugador sale de la zona muerta")]
+    public float velocidadSeguimiento = 2f;
+    [Tooltip("Factor de suavizado para el movimiento de cámara (menor = más suave)")]
+    public float amortiguacionSuave = 0.3f;
+    private Vector3 velocidad = Vector3.zero;
 
-    [Header("Look Ahead System")]
-    [Tooltip("How far ahead to look when player is moving")]
-    public float lookAheadDistance = 3f;
-    [Tooltip("How fast to apply look ahead")]
-    public float lookAheadSmooth = 2f;
-    [Tooltip("Minimum player speed to trigger look ahead")]
-    public float lookAheadThreshold = 0.1f;
-    private float currentLookAhead = 0f;
+    [Header("Sistema de Mirar Adelante")]
+    [Tooltip("Qué tan lejos mirar adelante cuando el jugador se está moviendo")]
+    public float distanciaLookAhead = 3f;
+    [Tooltip("Qué tan rápido aplicar el look ahead")]
+    public float suavidadLookAhead = 2f;
+    [Tooltip("Velocidad mínima del jugador para activar el look ahead")]
+    public float umbraLookAhead = 0.1f;
+    private float lookAheadActual = 0f;
 
-    [Header("Vertical Look Controls")]
-    [Tooltip("How far up the camera moves when looking up")]
-    public float lookUpOffset = 3f;
-    [Tooltip("How far down the camera moves when looking down")]
-    public float lookDownOffset = -3f;
-    [Tooltip("How fast vertical look interpolates")]
-    public float verticalLookSpeed = 3f;
-    private float currentVerticalLook = 0f;
+    [Header("Controles de Vista Vertical")]
+    [Tooltip("Qué tan arriba se mueve la cámara al mirar hacia arriba")]
+    public float desplazamientoMirarArriba = 3f;
+    [Tooltip("Qué tan abajo se mueve la cámara al mirar hacia abajo")]
+    public float desplazamientoMirarAbajo = -3f;
+    [Tooltip("Qué tan rápido interpola la vista vertical")]
+    public float velocidadVistaVertical = 3f;
+    private float vistaVerticalActual = 0f;
 
-    [Header("Camera Boundaries")]
-    public bool useCameraBounds = false;
-    [Tooltip("Camera won't go beyond these boundaries")]
-    public Vector2 minBounds;
-    public Vector2 maxBounds;
+    [Header("🕒 Sistema de Cooldown Vista Vertical")]
+    [Tooltip("Tiempo de cooldown entre usos de vista vertical (en segundos)")]
+    public float cooldownVistaVertical = 0.8f;
+    [Tooltip("Tiempo mínimo que debe mantener presionado para activar vista vertical")]
+    public float tiempoMantenerPresionado = 0.15f;
+    [Tooltip("Mostrar logs de debug para el cooldown")]
+    public bool mostrarDebugCooldown = false;
 
-    [Header("Hollow Knight Features")]
-    [Tooltip("Slight upward bias to focus on what's ahead")]
-    public float verticalBias = 0.5f;
-    [Tooltip("How fast camera snaps to new focus points")]
-    public float focusSnapSpeed = 1f;
+    // Variables del sistema de cooldown
+    private float timerCooldownVertical = 0f;
+    private float timerMantenerPresionado = 0f;
+    private bool vistaVerticalActivada = false;
+    private bool inputVerticalAnterior = false;
+    private float direccionVistaAnterior = 0f;
 
-    [Header("Input System")]
-    public InputActionAsset inputActions;
+    [Header("Límites de Cámara")]
+    public bool usarLimitesCamara = false;
+    [Tooltip("La cámara no irá más allá de estos límites")]
+    public Vector2 limitesMinimos;
+    public Vector2 limitesMaximos;
 
-    // Input actions
-    private InputAction lookAction;
-    private InputAction cameraAction;
+    [Header("Características Hollow Knight")]
+    [Tooltip("Sesgo ligeramente hacia arriba para enfocar en lo que está adelante")]
+    public float sesgoVertical = 0.5f;
+    [Tooltip("Qué tan rápido la cámara se ajusta a nuevos puntos de enfoque")]
+    public float velocidadEnfoqueRapido = 1f;
 
-    // Input values
-    private Vector2 lookInput;
-    private float cameraInput;
+    [Header("Sistema de Input")]
+    public InputActionAsset accionesInput;
 
-    // Camera state
-    private Vector3 targetPosition;
-    private Vector3 deadZoneCenter;
-    private Rigidbody playerRb;
+    // Acciones de input
+    private InputAction accionMirar;
+    private InputAction accionCamara;
+
+    // Valores de input
+    private Vector2 inputMirar;
+    private float inputCamara;
+
+    // Estado de la cámara
+    private Vector3 posicionObjetivo;
+    private Vector3 centroZonaMuerta;
+    private Rigidbody rbJugador;
 
     public bool validar_inputs_camara = true;
 
     void Start()
     {
-        SetupInputActions();
+        ConfigurarAccionesInput();
 
-        // Get player rigidbody for velocity calculations
-        if (player != null)
+        // Obtener rigidbody del jugador para cálculos de velocidad
+        if (jugador != null)
         {
-            playerRb = player.GetComponent<Rigidbody>();
-            deadZoneCenter = player.position;
+            rbJugador = jugador.GetComponent<Rigidbody>();
+            centroZonaMuerta = jugador.position;
         }
     }
 
-    void SetupInputActions()
+    void ConfigurarAccionesInput()
     {
-        if (inputActions == null)
+        if (accionesInput == null)
         {
-            inputActions = Resources.Load<InputActionAsset>("InputSystem_Actions");
+            accionesInput = Resources.Load<InputActionAsset>("InputSystem_Actions");
         }
 
-        if (inputActions != null)
+        if (accionesInput != null)
         {
-            var playerActionMap = inputActions.FindActionMap("Player");
-            if (playerActionMap != null)
+            var mapaAccionesJugador = accionesInput.FindActionMap("Player");
+            if (mapaAccionesJugador != null)
             {
-                lookAction = playerActionMap.FindAction("Look");
+                accionMirar = mapaAccionesJugador.FindAction("Look");
             }
         }
 
-        // Create separate camera action for keyboard W/S only
-        cameraAction = new InputAction("CameraVertical", InputActionType.Value, expectedControlType: "Axis");
-        cameraAction.AddCompositeBinding("1DAxis")
-            .With("Positive", "<Keyboard>/w")
-            .With("Negative", "<Keyboard>/s");
+        // Crear acción de cámara separada para teclado W/S - CONTROLES INVERTIDOS
+        accionCamara = new InputAction("CamaraVertical", InputActionType.Value, expectedControlType: "Axis");
+        accionCamara.AddCompositeBinding("1DAxis")
+            .With("Positive", "<Keyboard>/s")    // S ahora mueve cámara ARRIBA
+            .With("Negative", "<Keyboard>/w");   // W ahora mueve cámara ABAJO
 
-        // Fallback for look action
-        if (lookAction == null)
+        // Respaldo para acción de mirar
+        if (accionMirar == null)
         {
-            lookAction = new InputAction("Look", InputActionType.Value, expectedControlType: "Vector2");
-            lookAction.AddBinding("<Gamepad>/rightStick");
+            accionMirar = new InputAction("Mirar", InputActionType.Value, expectedControlType: "Vector2");
+            accionMirar.AddBinding("<Gamepad>/rightStick");
         }
 
-        SetupInputCallbacks();
-        EnableInputActions();
+        ConfigurarCallbacksInput();
+        HabilitarAccionesInput();
     }
 
-    void SetupInputCallbacks()
+    void ConfigurarCallbacksInput()
     {
-        lookAction.performed += OnLook;
-        lookAction.canceled += OnLook;
-        cameraAction.performed += OnCameraVertical;
-        cameraAction.canceled += OnCameraVertical;
+        accionMirar.performed += AlMirar;
+        accionMirar.canceled += AlMirar;
+        accionCamara.performed += AlCamaraVertical;
+        accionCamara.canceled += AlCamaraVertical;
     }
 
-    void EnableInputActions()
+    void HabilitarAccionesInput()
     {
-        lookAction?.Enable();
-        cameraAction?.Enable();
+        accionMirar?.Enable();
+        accionCamara?.Enable();
     }
 
-    void DisableInputActions()
+    void DeshabilitarAccionesInput()
     {
-        lookAction?.Disable();
-        cameraAction?.Disable();
+        accionMirar?.Disable();
+        accionCamara?.Disable();
     }
 
     void OnDestroy()
     {
-        DisableInputActions();
+        DeshabilitarAccionesInput();
     }
 
-    void OnLook(InputAction.CallbackContext context)
+    void AlMirar(InputAction.CallbackContext context)
     {
-        lookInput = context.ReadValue<Vector2>();
+        inputMirar = context.ReadValue<Vector2>();
     }
 
-    void OnCameraVertical(InputAction.CallbackContext context)
+    void AlCamaraVertical(InputAction.CallbackContext context)
     {
-        cameraInput = context.ReadValue<float>();
+        inputCamara = context.ReadValue<float>();
     }
 
-    void LateUpdate()
+    void Update()
     {
-        if (player == null) return;
-
-        UpdateDeadZone();
-        UpdateLookAhead();
-        UpdateVerticalLook();
-        UpdateCameraPosition();
-        ApplyBounds();
+        // 🕒 ACTUALIZAR COOLDOWN DE VISTA VERTICAL
+        ActualizarCooldownVistaVertical();
     }
 
-    void UpdateDeadZone()
+    void ActualizarCooldownVistaVertical()
     {
-        Vector3 playerPos = player.position;
-        Vector3 cameraPos = transform.position;
-
-        // Calculate dead zone boundaries
-        float leftBound = deadZoneCenter.x - deadZoneWidth * 0.5f;
-        float rightBound = deadZoneCenter.x + deadZoneWidth * 0.5f;
-        float bottomBound = deadZoneCenter.y - deadZoneHeight * 0.5f;
-        float topBound = deadZoneCenter.y + deadZoneHeight * 0.5f;
-
-        // Check if player is outside dead zone
-        Vector3 newDeadZoneCenter = deadZoneCenter;
-
-        // Horizontal dead zone check
-        if (playerPos.x < leftBound)
+        // Actualizar timer de cooldown
+        if (timerCooldownVertical > 0f)
         {
-            newDeadZoneCenter.x = playerPos.x + deadZoneWidth * 0.5f;
-        }
-        else if (playerPos.x > rightBound)
-        {
-            newDeadZoneCenter.x = playerPos.x - deadZoneWidth * 0.5f;
+            timerCooldownVertical -= Time.deltaTime;
         }
 
-        // Vertical dead zone check
-        if (playerPos.y < bottomBound)
+        // Verificar si hay input vertical activo
+        bool hayInputVertical = false;
+        float direccionInput = 0f;
+
+        if (validar_inputs_camara)
         {
-            newDeadZoneCenter.y = playerPos.y + deadZoneHeight * 0.5f;
-        }
-        else if (playerPos.y > topBound)
-        {
-            newDeadZoneCenter.y = playerPos.y - deadZoneHeight * 0.5f;
-        }
-
-        // Smoothly move dead zone center
-        deadZoneCenter = Vector3.Lerp(deadZoneCenter, newDeadZoneCenter, Time.deltaTime * followSpeed);
-    }
-
-    void UpdateLookAhead()
-    {
-        float targetLookAhead = 0f;
-
-        if (playerRb != null)
-        {
-            // Use velocity for more responsive look ahead
-            float horizontalVelocity = playerRb.velocity.x;
-
-            if (Mathf.Abs(horizontalVelocity) > lookAheadThreshold)
+            // Input de teclado tiene prioridad
+            if (Mathf.Abs(inputCamara) > 0.1f)
             {
-                targetLookAhead = Mathf.Sign(horizontalVelocity) * lookAheadDistance;
+                hayInputVertical = true;
+                direccionInput = Mathf.Sign(inputCamara);
+            }
+            // Input del stick derecho del controlador
+            else if (Mathf.Abs(inputMirar.y) > 0.1f)
+            {
+                hayInputVertical = true;
+                direccionInput = Mathf.Sign(inputMirar.y);
+            }
+        }
+
+        // 🔄 LÓGICA DEL SISTEMA DE COOLDOWN
+        if (hayInputVertical)
+        {
+            // Si el input cambió de dirección, resetear
+            if (inputVerticalAnterior && direccionInput != direccionVistaAnterior)
+            {
+                timerMantenerPresionado = 0f;
+                vistaVerticalActivada = false;
+
+                if (mostrarDebugCooldown)
+                    Debug.Log("🔄 Dirección de vista vertical cambiada - Reset");
+            }
+
+            // Si no estaba presionado antes, empezar contador
+            if (!inputVerticalAnterior)
+            {
+                timerMantenerPresionado = 0f;
+                vistaVerticalActivada = false;
+
+                if (mostrarDebugCooldown)
+                    Debug.Log("⏱️ Iniciando contador vista vertical");
+            }
+
+            // Incrementar timer de mantener presionado
+            timerMantenerPresionado += Time.deltaTime;
+
+            // Activar vista vertical si cumple las condiciones
+            if (!vistaVerticalActivada &&
+                timerMantenerPresionado >= tiempoMantenerPresionado &&
+                timerCooldownVertical <= 0f)
+            {
+                vistaVerticalActivada = true;
+                timerCooldownVertical = cooldownVistaVertical;
+                direccionVistaAnterior = direccionInput;
+
+                if (mostrarDebugCooldown)
+                    Debug.Log($"✅ Vista vertical activada - Dirección: {(direccionInput > 0 ? "ARRIBA" : "ABAJO")}");
             }
         }
         else
         {
-            // Fallback: use player scale for direction
-            if (player.localScale.x > 0)
+            // No hay input, resetear contadores
+            if (inputVerticalAnterior)
             {
-                targetLookAhead = lookAheadDistance;
-            }
-            else if (player.localScale.x < 0)
-            {
-                targetLookAhead = -lookAheadDistance;
+                timerMantenerPresionado = 0f;
+                vistaVerticalActivada = false;
+
+                if (mostrarDebugCooldown)
+                    Debug.Log("🛑 Input vertical cancelado");
             }
         }
 
-        currentLookAhead = Mathf.Lerp(currentLookAhead, targetLookAhead, Time.deltaTime * lookAheadSmooth);
+        inputVerticalAnterior = hayInputVertical;
     }
 
-    void UpdateVerticalLook()
+    void LateUpdate()
     {
-        float targetVerticalLook = 0f;
+        if (jugador == null) return;
 
-        if (validar_inputs_camara)
+        ActualizarZonaMuerta();
+        ActualizarLookAhead();
+        ActualizarVistaVertical();
+        ActualizarPosicionCamara();
+        AplicarLimites();
+    }
+
+    void ActualizarZonaMuerta()
+    {
+        Vector3 posJugador = jugador.position;
+        Vector3 posCamara = transform.position;
+
+        // Calcular límites de zona muerta
+        float limiteIzquierdo = centroZonaMuerta.x - anchoZonaMuerta * 0.5f;
+        float limiteDerecho = centroZonaMuerta.x + anchoZonaMuerta * 0.5f;
+        float limiteInferior = centroZonaMuerta.y - altoZonaMuerta * 0.5f;
+        float limiteSuperior = centroZonaMuerta.y + altoZonaMuerta * 0.5f;
+
+        // Verificar si el jugador está fuera de la zona muerta
+        Vector3 nuevoCentroZonaMuerta = centroZonaMuerta;
+
+        // Verificación horizontal de zona muerta
+        if (posJugador.x < limiteIzquierdo)
         {
-            // Keyboard input takes priority
-            if (Mathf.Abs(cameraInput) > 0.1f)
+            nuevoCentroZonaMuerta.x = posJugador.x + anchoZonaMuerta * 0.5f;
+        }
+        else if (posJugador.x > limiteDerecho)
+        {
+            nuevoCentroZonaMuerta.x = posJugador.x - anchoZonaMuerta * 0.5f;
+        }
+
+        // Verificación vertical de zona muerta
+        if (posJugador.y < limiteInferior)
+        {
+            nuevoCentroZonaMuerta.y = posJugador.y + altoZonaMuerta * 0.5f;
+        }
+        else if (posJugador.y > limiteSuperior)
+        {
+            nuevoCentroZonaMuerta.y = posJugador.y - altoZonaMuerta * 0.5f;
+        }
+
+        // Mover suavemente el centro de la zona muerta
+        centroZonaMuerta = Vector3.Lerp(centroZonaMuerta, nuevoCentroZonaMuerta, Time.deltaTime * velocidadSeguimiento);
+    }
+
+    void ActualizarLookAhead()
+    {
+        float lookAheadObjetivo = 0f;
+
+        if (rbJugador != null)
+        {
+            // Usar velocidad para un look ahead más responsivo
+            float velocidadHorizontal = rbJugador.velocity.x;
+
+            if (Mathf.Abs(velocidadHorizontal) > umbraLookAhead)
             {
-                if (cameraInput > 0)
+                lookAheadObjetivo = Mathf.Sign(velocidadHorizontal) * distanciaLookAhead;
+            }
+        }
+        else
+        {
+            // Respaldo: usar escala del jugador para dirección
+            if (jugador.localScale.x > 0)
+            {
+                lookAheadObjetivo = distanciaLookAhead;
+            }
+            else if (jugador.localScale.x < 0)
+            {
+                lookAheadObjetivo = -distanciaLookAhead;
+            }
+        }
+
+        lookAheadActual = Mathf.Lerp(lookAheadActual, lookAheadObjetivo, Time.deltaTime * suavidadLookAhead);
+    }
+
+    void ActualizarVistaVertical()
+    {
+        float vistaVerticalObjetivo = 0f;
+
+        // 🕒 SOLO APLICAR VISTA VERTICAL SI ESTÁ ACTIVADA Y EN COOLDOWN
+        if (validar_inputs_camara && vistaVerticalActivada)
+        {
+            // El input de teclado tiene prioridad
+            if (Mathf.Abs(inputCamara) > 0.1f)
+            {
+                if (inputCamara > 0)
                 {
-                    targetVerticalLook = lookUpOffset;
+                    vistaVerticalObjetivo = desplazamientoMirarArriba;    // S = cámara arriba
                 }
                 else
                 {
-                    targetVerticalLook = lookDownOffset;
+                    vistaVerticalObjetivo = desplazamientoMirarAbajo;     // W = cámara abajo  
                 }
             }
-            // Controller right stick input
-            else if (Mathf.Abs(lookInput.y) > 0.1f)
+            // Input del stick derecho del controlador - SIN INVERSIÓN
+            else if (Mathf.Abs(inputMirar.y) > 0.1f)
             {
-                float stickInput = -lookInput.y; // Inverted for natural feel
+                float inputStick = inputMirar.y; // QUITADA LA INVERSIÓN
 
-                if (stickInput > 0)
+                if (inputStick > 0)
                 {
-                    targetVerticalLook = stickInput * lookUpOffset;
+                    // Stick arriba = cámara arriba
+                    vistaVerticalObjetivo = inputStick * desplazamientoMirarArriba;
                 }
                 else
                 {
-                    targetVerticalLook = stickInput * Mathf.Abs(lookDownOffset);
+                    // Stick abajo = cámara abajo
+                    vistaVerticalObjetivo = inputStick * Mathf.Abs(desplazamientoMirarAbajo);
                 }
             }
         }
 
-        currentVerticalLook = Mathf.Lerp(currentVerticalLook, targetVerticalLook, Time.deltaTime * verticalLookSpeed);
+        vistaVerticalActual = Mathf.Lerp(vistaVerticalActual, vistaVerticalObjetivo, Time.deltaTime * velocidadVistaVertical);
     }
 
-    void UpdateCameraPosition()
+    void ActualizarPosicionCamara()
     {
-        // Calculate target position based on dead zone center + look ahead + vertical look + bias
-        targetPosition = new Vector3(
-            deadZoneCenter.x + currentLookAhead,
-            deadZoneCenter.y + currentVerticalLook + verticalBias,
+        // Calcular posición objetivo basada en centro de zona muerta + look ahead + vista vertical + sesgo
+        posicionObjetivo = new Vector3(
+            centroZonaMuerta.x + lookAheadActual,
+            centroZonaMuerta.y + vistaVerticalActual + sesgoVertical,
             transform.position.z
         );
 
-        // Smooth camera movement using SmoothDamp for Hollow Knight-like feel
-        transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref velocity, smoothDamping);
+        // Movimiento suave de cámara usando SmoothDamp para sensación como Hollow Knight
+        transform.position = Vector3.SmoothDamp(transform.position, posicionObjetivo, ref velocidad, amortiguacionSuave);
     }
 
-    void ApplyBounds()
+    void AplicarLimites()
     {
-        if (!useCameraBounds) return;
+        if (!usarLimitesCamara) return;
 
         Vector3 pos = transform.position;
-        pos.x = Mathf.Clamp(pos.x, minBounds.x, maxBounds.x);
-        pos.y = Mathf.Clamp(pos.y, minBounds.y, maxBounds.y);
+        pos.x = Mathf.Clamp(pos.x, limitesMinimos.x, limitesMaximos.x);
+        pos.y = Mathf.Clamp(pos.y, limitesMinimos.y, limitesMaximos.y);
         transform.position = pos;
     }
 
-    // Gizmos for visualizing dead zone in Scene view
+    // 🕒 MÉTODOS PÚBLICOS PARA EL SISTEMA DE COOLDOWN
+    public bool EstaEnCooldownVertical()
+    {
+        return timerCooldownVertical > 0f;
+    }
+
+    public float GetCooldownVerticalRestante()
+    {
+        return Mathf.Max(0f, timerCooldownVertical);
+    }
+
+    public void ResetearCooldownVertical()
+    {
+        timerCooldownVertical = 0f;
+        timerMantenerPresionado = 0f;
+        vistaVerticalActivada = false;
+
+        if (mostrarDebugCooldown)
+            Debug.Log("🔄 Cooldown vista vertical reseteado manualmente");
+    }
+
+    public bool EstaVistaVerticalActivada()
+    {
+        return vistaVerticalActivada;
+    }
+
+    // Gizmos para visualizar zona muerta en vista de escena
     void OnDrawGizmosSelected()
     {
-        if (!showDeadZoneGizmo) return;
+        if (!mostrarGizmoZonaMuerta) return;
 
         if (Application.isPlaying)
         {
-            // Draw current dead zone
+            // Dibujar zona muerta actual
             Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(deadZoneCenter, new Vector3(deadZoneWidth, deadZoneHeight, 0f));
+            Gizmos.DrawWireCube(centroZonaMuerta, new Vector3(anchoZonaMuerta, altoZonaMuerta, 0f));
 
-            // Draw target position
+            // Dibujar posición objetivo
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(targetPosition, 0.2f);
+            Gizmos.DrawWireSphere(posicionObjetivo, 0.2f);
+
+            // 🕒 VISUALIZAR ESTADO DEL COOLDOWN
+            if (EstaEnCooldownVertical())
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireCube(transform.position + Vector3.up * 2f, Vector3.one * 0.3f);
+            }
+            else if (vistaVerticalActivada)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireCube(transform.position + Vector3.up * 2f, Vector3.one * 0.3f);
+            }
         }
-        else if (player != null)
+        else if (jugador != null)
         {
-            // Draw initial dead zone in edit mode
+            // Dibujar zona muerta inicial en modo edición
             Gizmos.color = Color.cyan;
-            Gizmos.DrawWireCube(player.position, new Vector3(deadZoneWidth, deadZoneHeight, 0f));
+            Gizmos.DrawWireCube(jugador.position, new Vector3(anchoZonaMuerta, altoZonaMuerta, 0f));
         }
     }
 
-    // Public methods for external control (like room transitions)
-    public void SetDeadZoneCenter(Vector3 newCenter)
+    // Métodos públicos para control externo (como transiciones de habitación)
+    public void EstablecerCentroZonaMuerta(Vector3 nuevoCentro)
     {
-        deadZoneCenter = newCenter;
+        centroZonaMuerta = nuevoCentro;
     }
 
-    public void FocusOnPosition(Vector3 focusPoint, float focusTime = 1f)
+    public void EnfocarEnPosicion(Vector3 puntoEnfoque, float tiempoEnfoque = 1f)
     {
-        StartCoroutine(FocusCoroutine(focusPoint, focusTime));
+        StartCoroutine(CorrutinaEnfoque(puntoEnfoque, tiempoEnfoque));
     }
 
-    private System.Collections.IEnumerator FocusCoroutine(Vector3 focusPoint, float focusTime)
+    private System.Collections.IEnumerator CorrutinaEnfoque(Vector3 puntoEnfoque, float tiempoEnfoque)
     {
-        Vector3 originalTarget = targetPosition;
-        float elapsed = 0f;
+        Vector3 objetivoOriginal = posicionObjetivo;
+        float tiempoTranscurrido = 0f;
 
-        while (elapsed < focusTime)
+        while (tiempoTranscurrido < tiempoEnfoque)
         {
-            elapsed += Time.deltaTime;
-            float t = elapsed / focusTime;
+            tiempoTranscurrido += Time.deltaTime;
+            float t = tiempoTranscurrido / tiempoEnfoque;
 
-            Vector3 focusTarget = new Vector3(focusPoint.x, focusPoint.y, transform.position.z);
-            transform.position = Vector3.Lerp(originalTarget, focusTarget, t * focusSnapSpeed);
+            Vector3 objetivoEnfoque = new Vector3(puntoEnfoque.x, puntoEnfoque.y, transform.position.z);
+            transform.position = Vector3.Lerp(objetivoOriginal, objetivoEnfoque, t * velocidadEnfoqueRapido);
 
             yield return null;
         }
 
-        // Reset dead zone to new focus point
-        deadZoneCenter = focusPoint;
+        // Resetear zona muerta al nuevo punto de enfoque
+        centroZonaMuerta = puntoEnfoque;
     }
 }

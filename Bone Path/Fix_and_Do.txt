@@ -1,14 +1,14 @@
 Fix:
- · Segundo salto únicamente impulso cosntante
- · Salto igualitario en PCs
  · Tutorial HUD
- · Daño jugador al atacar
  · Camara
  · TXT audios entre escenas
  · Ocultar cursor pausa ESC
  · Collider texto ajustar
  · Full Screen, resolutions y brillo
  · ESC cuando hay dialogo
+ · DropDown interactuable mando
+ · Cambiar controles mando
+ · Debugs Logs and logserros
 
 Do:
  · Animación/Transición de escena a escena
@@ -27,8 +27,10 @@ Do:
  · Aplicar cambios entre escenas, graficos, resolución, audio, controles...
  · Nueva estética main menú
  · Márgenes seguros textos y medidas separaciones iguales
+ · Cooldown mirar hacia arriba o abajo
 
 Probar:
+ · Salto igualitario en PCs
  · Sistema guardado/checkpoints
  · Salto, movimiento...
  · Camara

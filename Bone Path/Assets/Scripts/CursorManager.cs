@@ -1,74 +1,196 @@
-using UnityEngine;
-using System.Collections;
+﻿using UnityEngine;
+using UnityEngine.InputSystem;
 
-public static class CursorManager
+public class CursorManager : MonoBehaviour
 {
-    private static MonoBehaviour coroutineRunner;
-    private static bool isVisible = false;
+    [Header("Configuración del Cursor")]
+    [Tooltip("Sensibilidad para detectar movimiento del mouse")]
+    public float mouseSensitivity = 0.1f;
 
-    public static void Initialize(MonoBehaviour runner)
-    {
-        coroutineRunner = runner;
-        HideCursor();
-    }
+    [Tooltip("Mostrar logs de debugging")]
+    public bool showDebugLogs = false;
 
-    public static void ShowCursor()
-    {
-        Debug.Log("CursorManager: Showing cursor");
-        isVisible = true;
-        ApplyCursorState();
-    }
+    [Header("Estados del Cursor")]
+    [Tooltip("Estado actual del input")]
+    public bool isUsingController = false;
 
-    public static void HideCursor()
+    // Singleton para acceso global
+    public static CursorManager Instance { get; private set; }
+
+    // Estado anterior para detectar cambios
+    private bool wasUsingController = false;
+
+    private void Awake()
     {
-        Debug.Log("CursorManager: Hiding cursor");
-        isVisible = false;
-        if (coroutineRunner != null)
+        // Implementar Singleton
+        if (Instance == null)
         {
-            coroutineRunner.StartCoroutine(ForceHideCursorCoroutine());
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
-            ApplyCursorState();
+            Destroy(gameObject);
+            return;
         }
     }
 
-    private static void ApplyCursorState()
+    private void Start()
     {
-        if (isVisible)
+        // Configuración inicial del cursor
+        ActualizarCursor();
+
+        if (showDebugLogs)
+            Debug.Log("🖱️ CursorManager iniciado correctamente");
+    }
+
+    private void Update()
+    {
+        DetectarTipoDeInput();
+
+        // Solo actualizar si cambió el estado
+        if (wasUsingController != isUsingController)
         {
+            ActualizarCursor();
+            wasUsingController = isUsingController;
+        }
+    }
+
+    void DetectarTipoDeInput()
+    {
+        // Detectar movimiento del mouse
+        if (Mouse.current != null && Mouse.current.delta.ReadValue().magnitude > mouseSensitivity)
+        {
+            CambiarAMouse("Movimiento del mouse detectado");
+            return;
+        }
+
+        // Detectar clicks del mouse
+        if (Mouse.current != null &&
+            (Mouse.current.leftButton.wasPressedThisFrame ||
+             Mouse.current.rightButton.wasPressedThisFrame ||
+             Mouse.current.middleButton.wasPressedThisFrame))
+        {
+            CambiarAMouse("Click del mouse detectado");
+            return;
+        }
+
+        // Detectar scroll del mouse
+        if (Mouse.current != null && Mouse.current.scroll.ReadValue().magnitude > 0.1f)
+        {
+            CambiarAMouse("Scroll del mouse detectado");
+            return;
+        }
+
+        // Detectar input del controlador
+        if (Gamepad.current != null)
+        {
+            // Detectar movimiento de sticks
+            if (Gamepad.current.leftStick.ReadValue().magnitude > 0.1f ||
+                Gamepad.current.rightStick.ReadValue().magnitude > 0.1f)
+            {
+                CambiarAControlador("Movimiento de stick detectado");
+                return;
+            }
+
+            // Detectar D-pad
+            Vector2 dpad = Gamepad.current.dpad.ReadValue();
+            if (dpad.magnitude > 0.1f)
+            {
+                CambiarAControlador("D-pad detectado");
+                return;
+            }
+
+            // Detectar botones del controlador
+            if (Gamepad.current.buttonSouth.wasPressedThisFrame ||
+                Gamepad.current.buttonEast.wasPressedThisFrame ||
+                Gamepad.current.buttonWest.wasPressedThisFrame ||
+                Gamepad.current.buttonNorth.wasPressedThisFrame)
+            {
+                CambiarAControlador("Botón de controlador detectado");
+                return;
+            }
+
+            // Detectar triggers y shoulders
+            if (Gamepad.current.leftTrigger.ReadValue() > 0.1f ||
+                Gamepad.current.rightTrigger.ReadValue() > 0.1f ||
+                Gamepad.current.leftShoulder.wasPressedThisFrame ||
+                Gamepad.current.rightShoulder.wasPressedThisFrame)
+            {
+                CambiarAControlador("Trigger/Shoulder detectado");
+                return;
+            }
+        }
+
+        // Detectar teclado (cambiar a mouse ya que va junto)
+        if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
+        {
+            CambiarAMouse("Tecla presionada");
+            return;
+        }
+    }
+
+    void CambiarAMouse(string razon)
+    {
+        if (isUsingController)
+        {
+            isUsingController = false;
+            if (showDebugLogs)
+                Debug.Log($"🖱️ Cambiando a MOUSE: {razon}");
+        }
+    }
+
+    void CambiarAControlador(string razon)
+    {
+        if (!isUsingController)
+        {
+            isUsingController = true;
+            if (showDebugLogs)
+                Debug.Log($"🎮 Cambiando a CONTROLADOR: {razon}");
+        }
+    }
+
+    void ActualizarCursor()
+    {
+        if (isUsingController)
+        {
+            // Ocultar cursor cuando se usa controlador
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+
+            if (showDebugLogs)
+                Debug.Log("🎮 Cursor OCULTO - Modo controlador");
+        }
+        else
+        {
+            // Mostrar cursor cuando se usa mouse/teclado
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
-        }
-        else
-        {
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-        }
 
-        Debug.Log($"Applied cursor state - Visible: {Cursor.visible}, LockState: {Cursor.lockState}");
+            if (showDebugLogs)
+                Debug.Log("🖱️ Cursor VISIBLE - Modo mouse");
+        }
     }
 
-    private static IEnumerator ForceHideCursorCoroutine()
+    // Métodos públicos para control manual
+    public void ForzarModoMouse()
     {
-        // Force hide across multiple frames to override any interference
-        for (int i = 0; i < 5; i++)
-        {
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-            Debug.Log($"Force hide attempt {i + 1}");
-            yield return null; // Wait one frame
-        }
-
-        // Final check and force one more time
-        yield return new WaitForEndOfFrame();
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
-        Debug.Log($"Final force hide - Visible: {Cursor.visible}, LockState: {Cursor.lockState}");
+        isUsingController = false;
+        ActualizarCursor();
+        if (showDebugLogs)
+            Debug.Log("🖱️ Modo mouse FORZADO");
     }
 
-    public static bool IsVisible()
+    public void ForzarModoControlador()
     {
-        return isVisible;
+        isUsingController = true;
+        ActualizarCursor();
+        if (showDebugLogs)
+            Debug.Log("🎮 Modo controlador FORZADO");
+    }
+
+    public bool EstaUsandoControlador()
+    {
+        return isUsingController;
     }
 }

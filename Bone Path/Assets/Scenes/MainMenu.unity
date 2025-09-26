@@ -655,9 +655,9 @@ MonoBehaviour:
   m_Transition: 1
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_HighlightedColor: {r: 0.79607844, g: 0.60784316, b: 0, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0.79607844, g: 0.60784316, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -1283,14 +1283,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.79607844, g: 0.60784316, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 8d77a9373ab1a334d81b3d40d9d87a2e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1729,9 +1729,9 @@ MonoBehaviour:
   m_Transition: 1
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_HighlightedColor: {r: 0.79607844, g: 0.60784316, b: 0, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_SelectedColor: {r: 0.79607844, g: 0.60784316, b: 0, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.1
@@ -1747,7 +1747,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 635991117}
+  m_TargetGraphic: {fileID: 1292794258}
   toggleTransition: 1
   graphic: {fileID: 207404006}
   m_Group: {fileID: 0}
@@ -5545,6 +5545,7 @@ GameObject:
   - component: {fileID: 803537769}
   - component: {fileID: 803537768}
   - component: {fileID: 803537767}
+  - component: {fileID: 803537770}
   m_Layer: 5
   m_Name: Resolution_Dropdown
   m_TagString: Untagged
@@ -5595,7 +5596,7 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 0}
     m_HighlightedColor: {r: 0.79607844, g: 0.60784316, b: 0, a: 1}
     m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
     m_SelectedColor: {r: 0.79607844, g: 0.60784316, b: 0, a: 1}
@@ -5659,7 +5660,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -5684,6 +5685,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 803537765}
   m_CullTransparentMesh: 1
+--- !u!114 &803537770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 803537765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a41adc9cd08899e4da64df8ba851eb68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
+  highlightedColor: {r: 0.79607844, g: 0.60784316, b: 0, a: 1}
+  colorMultiplier: 1
 --- !u!1 &807206119
 GameObject:
   m_ObjectHideFlags: 0
@@ -6574,14 +6590,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.79607844, g: 0.60784316, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 8d77a9373ab1a334d81b3d40d9d87a2e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -6981,12 +6997,23 @@ MonoBehaviour:
   AudioPanel: {fileID: 1838532290}
   ControllerPanel: {fileID: 345248170}
   QuitGamePanel: {fileID: 179423928}
+  firstSelectedMainMenu: {fileID: 1053339445}
+  firstSelectedOptionsMain: {fileID: 898779578}
+  firstSelectedExtras: {fileID: 5825351}
+  firstSelectedGameOptions: {fileID: 688668261}
+  firstSelectedBrightness: {fileID: 1581957617}
+  firstSelectedAudio: {fileID: 751786713}
+  firstSelectedController: {fileID: 1568022498}
+  firstSelectedQuitGame: {fileID: 839903234}
   brightnessSlider: {fileID: 1581957617}
   brightnessTextValue: {fileID: 603179938}
   defaultBrightness: 1
   brightnessPreviewImage: {fileID: 645583526}
-  brightnessManager: {fileID: 0}
+  brightnessManager: {fileID: 1105172462}
   resolutionDropdown: {fileID: 803537767}
+  inputActions: {fileID: -944628639613478452, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  insideSubmenu: 0
 --- !u!4 &940763948
 Transform:
   m_ObjectHideFlags: 0
@@ -10115,7 +10142,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1585202986}
   - component: {fileID: 1585202985}
-  - component: {fileID: 1585202984}
+  - component: {fileID: 1585202987}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -10123,26 +10150,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1585202984
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1585202983}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SendPointerHoverToParent: 1
-  m_HorizontalAxis: Horizontal
-  m_VerticalAxis: Vertical
-  m_SubmitButton: Submit
-  m_CancelButton: Cancel
-  m_InputActionsPerSecond: 10
-  m_RepeatDelay: 0.5
-  m_ForceModuleActive: 0
 --- !u!114 &1585202985
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10155,7 +10162,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_FirstSelected: {fileID: 0}
+  m_FirstSelected: {fileID: 1053339441}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
 --- !u!4 &1585202986
@@ -10173,6 +10180,48 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1585202987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1585202983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_XRTrackingOrigin: {fileID: 0}
+  m_ActionsAsset: {fileID: -944628639613478452, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_PointAction: {fileID: -1654692200621890270, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_MoveAction: {fileID: -8784545083839296357, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_SubmitAction: {fileID: 392368643174621059, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_CancelAction: {fileID: 7727032971491509709, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_LeftClickAction: {fileID: 3001919216989983466, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_MiddleClickAction: {fileID: -2185481485913320682, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_RightClickAction: {fileID: -4090225696740746782, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: 505eaa0ecdb7e4b4ca67be8948f22c47,
+    type: 3}
+  m_DeselectOnBackgroundClick: 1
+  m_PointerBehavior: 0
+  m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
 --- !u!1 &1602463112
 GameObject:
   m_ObjectHideFlags: 0

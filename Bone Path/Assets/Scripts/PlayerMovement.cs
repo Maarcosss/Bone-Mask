@@ -1,7 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
@@ -9,27 +7,31 @@ public class PlayerMovement : MonoBehaviour
     [Header("Referencias")]
     public ManagerOptions ManagerOptionsRef;
 
-    Rigidbody mask_child;
+    Rigidbody rb;
 
     [Header("Movimiento")]
-    public float Speed = 1f;
-    public float JumpForce = 7f;
+    public float Speed = 6f;
+    public float JumpForce = 12f;
+    public float airControlMultiplier = 0.8f; // Control en el aire
 
-    [Header("Gravedad")]
-    public float extraGravity = 20f;        // fuerza extra hacia abajo
-    public float shortJumpMultiplier = 2f;  // salto corto si sueltas espacio
-    public float maxJumpTime = 0.25f;       // tiempo m�ximo manteniendo salto
-    float jumpTimeCounter;
+    [Header("Gravedad y Física")]
+    public float extraGravity = 25f;
+    public float shortJumpMultiplier = 2.5f;
+    public float maxJumpTime = 0.2f;
+    private float jumpTimeCounter;
 
     [Header("Doble salto")]
     public int maxJumps = 2;
-    int currentJumps;
+    private int currentJumps;
 
     [Header("Estados")]
     public bool validar_inputs = true;
     public bool validar_inputs_esc = true;
-    bool Contacto_Suelo = false;
-    bool isJumping = false;
+    private bool isGrounded = false;
+    private bool isJumping = false;
+    private bool jumpBuffered = false;
+    private float jumpBufferTime = 0.1f;
+    private float jumpBufferTimer = 0f;
 
     [Header("Input System")]
     public InputActionAsset inputActions;
@@ -46,21 +48,27 @@ public class PlayerMovement : MonoBehaviour
 
     void Start()
     {
+        // 🚀 QUITAR LÍMITE DE FPS - USAR FÍSICA APROPIADA
+        // Application.targetFrameRate = -1; // Sin límite
+        // QualitySettings.vSyncCount = 0;   // Deshabilitar VSync si es necesario
+
         Time.timeScale = 1.0f;
-        mask_child = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
         currentJumps = maxJumps;
 
-        // Setup Input System
+        // 🔧 OPTIMIZAR RIGIDBODY PARA MOVIMIENTO CONSISTENTE
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        rb.freezeRotation = true; // Evitar rotación no deseada
+
         SetupInputActions();
 
-        // Ocultar cursor al iniciar el juego
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
 
     void SetupInputActions()
     {
-        // If no input asset is assigned, try to find the one in your project
         if (inputActions == null)
         {
             inputActions = Resources.Load<InputActionAsset>("InputSystem_Actions");
@@ -68,22 +76,16 @@ public class PlayerMovement : MonoBehaviour
 
         if (inputActions != null)
         {
-            // Get actions from the Player action map
             var playerActionMap = inputActions.FindActionMap("Player");
 
             if (playerActionMap != null)
             {
                 moveAction = playerActionMap.FindAction("Move");
                 jumpAction = playerActionMap.FindAction("Jump");
-
-                // Create a pause action (you might need to add this to your Input Actions)
-                pauseAction = new InputAction("Pause", InputActionType.Button);
-                pauseAction.AddBinding("<Keyboard>/escape");
-                pauseAction.AddBinding("<Gamepad>/start");
             }
         }
 
-        // Fallback: create actions manually if asset is not found
+        // Fallback: crear acciones manualmente
         if (moveAction == null)
         {
             moveAction = new InputAction("Move", InputActionType.Value, expectedControlType: "Vector2");
@@ -109,10 +111,7 @@ public class PlayerMovement : MonoBehaviour
             pauseAction.AddBinding("<Gamepad>/start");
         }
 
-        // Setup input callbacks
         SetupInputCallbacks();
-
-        // Enable actions
         EnableInputActions();
     }
 
@@ -155,6 +154,8 @@ public class PlayerMovement : MonoBehaviour
     {
         jumpPressed = true;
         jumpHeld = true;
+        jumpBuffered = true;
+        jumpBufferTimer = jumpBufferTime;
     }
 
     void OnJumpCanceled(InputAction.CallbackContext context)
@@ -169,121 +170,120 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // Solo si se permiten inputs normales
-        if (validar_inputs)
+        // 🚀 SOLO LÓGICA DE INPUT, NO FÍSICA
+        if (Time.timeScale == 0f) return;
+
+        // Jump buffer timer
+        if (jumpBufferTimer > 0f)
         {
-            DetectarMovimientoYSaltos();
+            jumpBufferTimer -= Time.deltaTime;
+            if (jumpBufferTimer <= 0f)
+            {
+                jumpBuffered = false;
+            }
         }
 
         // Reset jump pressed flag
         jumpPressed = false;
-
-        // Aplicar gravedad extra todo el tiempo
-        mask_child.AddForce(Vector3.down * extraGravity, ForceMode.Acceleration);
-
-        // Salto corto si sueltas el bot�n de salto antes de tiempo
-        if (mask_child.velocity.y > 0 && !jumpHeld)
-        {
-            mask_child.velocity += Vector3.up * Physics.gravity.y * (shortJumpMultiplier - 1) * Time.deltaTime;
-        }
     }
 
-    void DetectarEscape()
+    void FixedUpdate()
     {
-        // Si no estamos dentro de un submen�
-        if (!ManagerOptionsRef.insideSubmenu)
+        // 🚀 TODA LA FÍSICA EN FIXEDUPDATE PARA CONSISTENCIA
+        if (Time.timeScale == 0f) return;
+
+        if (validar_inputs)
         {
-            bool isPanelCurrentlyActive = ManagerOptionsRef.PausePanel.activeInHierarchy;
+            HandleMovement();
+            HandleJumping();
+        }
 
-            Debug.Log($"ESC Pressed - Panel was: {isPanelCurrentlyActive}");
+        ApplyExtraGravity();
+    }
 
-            if (!isPanelCurrentlyActive) // Panel va a activarse (pausar)
+    void HandleMovement()
+    {
+        // 🔧 MOVIMIENTO FRAME-RATE INDEPENDENT
+        float horizontalInput = moveInput.x;
+        float targetSpeed = horizontalInput * Speed;
+
+        // Aplicar control de aire
+        if (!isGrounded)
+        {
+            targetSpeed *= airControlMultiplier;
+        }
+
+        // ✅ CAMBIAR DIRECCIÓN DEL PERSONAJE CON ROTACIÓN (NO ESCALADO)
+        if (Mathf.Abs(horizontalInput) > 0.1f)
+        {
+            if (horizontalInput < 0)
             {
-                // Use the ManagerOptions.Pause() method
-                ManagerOptionsRef.Pause();
+                transform.rotation = Quaternion.Euler(0, 180, 0); // Izquierda
             }
-            else // Panel va a desactivarse (despausar)
+            else if (horizontalInput > 0)
             {
-                // Use the SAME method as the Continue button
-                ManagerOptionsRef.Continue();
-            }
-        }
-    }
-
-
-
-    // Add this new coroutine to your PlayerMovement class
-    private IEnumerator ForceHideCursor()
-    {
-        // Wait a frame to ensure all other scripts have finished their updates
-        yield return null;
-
-        // Force hide cursor multiple times to ensure it sticks
-        for (int i = 0; i < 3; i++)
-        {
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-            Debug.Log($"Force hiding cursor attempt {i + 1}");
-            yield return new WaitForEndOfFrame();
-        }
-
-        Debug.Log($"Final cursor state - Visible: {Cursor.visible}, LockState: {Cursor.lockState}");
-    }
-
-
-    void DetectarMovimientoYSaltos()
-    {
-        // Salto (normal + doble salto)
-        if (jumpPressed && currentJumps > 0)
-        {
-            isJumping = true;
-            jumpTimeCounter = maxJumpTime;
-            mask_child.velocity = new Vector3(mask_child.velocity.x, JumpForce, mask_child.velocity.z);
-
-            currentJumps--; // gasta un salto
-            Contacto_Suelo = false;
-        }
-
-        // Mantener salto m�s tiempo
-        if (jumpHeld && isJumping)
-        {
-            if (jumpTimeCounter > 0)
-            {
-                mask_child.velocity = new Vector3(mask_child.velocity.x, JumpForce, mask_child.velocity.z);
-                jumpTimeCounter -= Time.deltaTime;
+                transform.rotation = Quaternion.Euler(0, 0, 0);   // Derecha
             }
         }
 
-        // Soltar bot�n de salto interrumpe salto
-        if (!jumpHeld)
+        // Aplicar movimiento suave
+        Vector3 targetVelocity = new Vector3(targetSpeed, rb.velocity.y, rb.velocity.z);
+        rb.velocity = Vector3.Lerp(rb.velocity, targetVelocity, Time.fixedDeltaTime * 15f);
+    }
+
+    void HandleJumping()
+    {
+        // Jump buffering - permite saltar justo antes de tocar el suelo
+        bool shouldJump = (jumpPressed || jumpBuffered) && currentJumps > 0;
+
+        if (shouldJump)
+        {
+            // Primer salto solo si está en el suelo (o muy cerca)
+            if (currentJumps == maxJumps && !isGrounded)
+            {
+                return;
+            }
+
+            PerformJump();
+        }
+
+        // Salto variable (mantener espacio para saltar más alto)
+        if (jumpHeld && isJumping && jumpTimeCounter > 0f)
+        {
+            jumpTimeCounter -= Time.fixedDeltaTime;
+            rb.velocity = new Vector3(rb.velocity.x, JumpForce, rb.velocity.z);
+        }
+        else
         {
             isJumping = false;
         }
+    }
 
-        // Movimiento lateral usando Input System
-        float horizontalInput = moveInput.x;
+    void PerformJump()
+    {
+        isJumping = true;
+        jumpTimeCounter = maxJumpTime;
+        jumpBuffered = false;
+        jumpBufferTimer = 0f;
 
-        // Si ambos lados est�n presionados (o no hay input), detener
-        if (Mathf.Approximately(horizontalInput, 0f))
+        rb.velocity = new Vector3(rb.velocity.x, JumpForce, rb.velocity.z);
+        currentJumps--;
+
+        if (currentJumps == maxJumps - 1)
         {
-            mask_child.velocity = new Vector3(0f, mask_child.velocity.y, mask_child.velocity.z);
-            return;
+            isGrounded = false;
         }
+    }
 
-        // Movimiento hacia la izquierda
-        if (horizontalInput < 0)
-        {
-            transform.rotation = Quaternion.Euler(0, 180, 0);
-            mask_child.velocity = new Vector3(-Speed, mask_child.velocity.y, 0f);
-            return;
-        }
+    void ApplyExtraGravity()
+    {
+        // 🔧 GRAVEDAD CONSISTENTE
+        rb.AddForce(Vector3.down * extraGravity, ForceMode.Acceleration);
 
-        // Movimiento hacia la derecha
-        if (horizontalInput > 0)
+        // Caída más rápida si se suelta el salto
+        if (rb.velocity.y > 0 && !jumpHeld)
         {
-            transform.rotation = Quaternion.Euler(0, 0, 0);
-            mask_child.velocity = new Vector3(Speed, mask_child.velocity.y, 0f);
-            return;
+            rb.AddForce(Vector3.down * extraGravity * (shortJumpMultiplier - 1), ForceMode.Acceleration);
         }
     }
 
@@ -291,9 +291,9 @@ public class PlayerMovement : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Suelo"))
         {
-            Contacto_Suelo = true;
+            isGrounded = true;
             isJumping = false;
-            currentJumps = maxJumps; // resetear saltos al tocar suelo
+            currentJumps = maxJumps;
         }
     }
 
@@ -301,7 +301,48 @@ public class PlayerMovement : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Suelo"))
         {
-            Contacto_Suelo = false;
+            isGrounded = false;
         }
+    }
+
+    void DetectarEscape()
+    {
+        if (!validar_inputs_esc)
+        {
+            Debug.Log("🚫 ESC bloqueado - En diálogo o estado especial");
+            return;
+        }
+
+        if (!ManagerOptionsRef.insideSubmenu)
+        {
+            bool isPanelCurrentlyActive = ManagerOptionsRef.PausePanel.activeInHierarchy;
+
+            if (!isPanelCurrentlyActive)
+            {
+                ManagerOptionsRef.Pause();
+            }
+            else
+            {
+                ManagerOptionsRef.Continue();
+            }
+        }
+    }
+
+    // ✅ MÉTODOS PÚBLICOS PARA CONTROL EXTERNO DE ESC
+    public void DeshabilitarEsc()
+    {
+        pauseAction?.Disable();
+        Debug.Log("🔒 Acción de ESC deshabilitada");
+    }
+
+    public void HabilitarEsc()
+    {
+        pauseAction?.Enable();
+        Debug.Log("🔓 Acción de ESC habilitada");
+    }
+
+    public bool EstaEscHabilitado()
+    {
+        return pauseAction != null && pauseAction.enabled;
     }
 }
