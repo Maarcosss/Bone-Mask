@@ -48,8 +48,8 @@ public class PlayerAttack : MonoBehaviour
         {
             attackAction = new InputAction("Attack", InputActionType.Button);
 
-            // Gatillo derecho del controlador (input principal)
-            attackAction.AddBinding("<Gamepad>/rightTrigger");
+            // ✅ CAMBIADO: Cuadrado/X en lugar de gatillo derecho
+            attackAction.AddBinding("<Gamepad>/buttonWest"); // Cuadrado en PlayStation / X en Xbox
 
             // Fallback: click izquierdo del mouse
             attackAction.AddBinding("<Mouse>/leftButton");
@@ -125,7 +125,7 @@ public class PlayerAttack : MonoBehaviour
 
         attackTimer = attackDuration;
 
-        Debug.Log("¡Ataque ejecutado!");
+        Debug.Log("¡Ataque ejecutado con Cuadrado!");
     }
 
     void FinalizarAtaque()

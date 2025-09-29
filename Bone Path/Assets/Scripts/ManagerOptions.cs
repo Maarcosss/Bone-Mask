@@ -1,11 +1,10 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
-
 
 public class ManagerOptions : MonoBehaviour
 {
@@ -18,24 +17,27 @@ public class ManagerOptions : MonoBehaviour
     public GameObject QuitToMenuPausePanel;
 
     [Header("Primeras Selecciones para Controlador")]
-    [Tooltip("Primer bot�n seleccionado cuando se abre el men� de pausa")]
+    [Tooltip("Primer botón seleccionado cuando se abre el menú de pausa")]
     public Button firstSelectedPauseButton;
-    [Tooltip("Primer bot�n seleccionado cuando se abre el men� de opciones")]
+    [Tooltip("Primer botón seleccionado cuando se abre el menú de opciones")]
     public Button firstSelectedOptionsButton;
-    [Tooltip("Primer bot�n seleccionado cuando se abre el men� de salir")]
+    [Tooltip("Primer botón seleccionado cuando se abre el menú de salir")]
     public Button firstSelectedQuitButton;
 
-    [Header("Configuraci�n de Input")]
+    [Header("Configuración de Input")]
     public InputActionAsset inputActions;
 
     [HideInInspector] public bool insideSubmenu = false;
+
+    // ✅ NUEVO: Sistema de memoria de botones
+    private Button ultimoBotonSeleccionado = null;
 
     // Input System
     private InputAction navigateAction;
     private InputAction submitAction;
     private InputAction cancelAction;
 
-    // Control de navegaci�n
+    // Control de navegación
     private bool isUsingController = false;
     private EventSystem eventSystem;
 
@@ -45,7 +47,7 @@ public class ManagerOptions : MonoBehaviour
         eventSystem = EventSystem.current;
         if (eventSystem == null)
         {
-            Debug.LogError("No se encontr� EventSystem en la escena. Agrega un EventSystem para navegaci�n con controlador.");
+            // Sin Debug.LogError - removido
         }
 
         // Configurar Input System
@@ -96,7 +98,8 @@ public class ManagerOptions : MonoBehaviour
         if (cancelAction == null)
         {
             cancelAction = new InputAction("Cancel", InputActionType.Button);
-            cancelAction.AddBinding("<Gamepad>/buttonEast"); // B button
+            cancelAction.AddBinding("<Gamepad>/buttonEast");  // B button (Xbox)
+            cancelAction.AddBinding("<Gamepad>/buttonNorth"); // ✅ Círculo (PlayStation)
             cancelAction.AddBinding("<Keyboard>/escape");
         }
 
@@ -158,6 +161,58 @@ public class ManagerOptions : MonoBehaviour
         {
             isUsingController = true;
             MostrarCursorSegunInput();
+
+            // ✅ NAVEGACIÓN CON CÍRCULO/B - IR HACIA ATRÁS
+            ManejarCancelacion();
+        }
+    }
+
+    // ✅ NUEVO: MANEJO DE CANCELACIÓN PARA IR HACIA ATRÁS
+    void ManejarCancelacion()
+    {
+        if (OptionsPausePanel.activeInHierarchy)
+        {
+            BackOptionsPause();
+        }
+        else if (QuitToMenuPausePanel.activeInHierarchy)
+        {
+            NoQuitToMenu();
+        }
+    }
+
+    // ✅ NUEVO: Guardar botón actual antes de cambiar de panel
+    void GuardarBotonActual()
+    {
+        if (eventSystem != null && eventSystem.currentSelectedGameObject != null)
+        {
+            Button botonActual = eventSystem.currentSelectedGameObject.GetComponent<Button>();
+            if (botonActual != null)
+            {
+                ultimoBotonSeleccionado = botonActual;
+                Debug.Log($"🔄 Guardado último botón: {ultimoBotonSeleccionado.name}");
+            }
+        }
+    }
+
+    // ✅ MODIFICADO: Establecer selección con memoria
+    void EstablecerPrimeraSeleccion(Button botonSeleccionado, bool usarMemoria = false)
+    {
+        Button botonASeleccionar = botonSeleccionado;
+
+        // Si se solicita usar memoria y hay un botón guardado, usarlo
+        if (usarMemoria && ultimoBotonSeleccionado != null && ultimoBotonSeleccionado.gameObject.activeInHierarchy)
+        {
+            botonASeleccionar = ultimoBotonSeleccionado;
+            Debug.Log($"📍 Usando memoria: {ultimoBotonSeleccionado.name}");
+        }
+
+        if (eventSystem != null && botonASeleccionar != null)
+        {
+            // Limpiar selección actual
+            eventSystem.SetSelectedGameObject(null);
+
+            // Establecer nueva selección después de un frame
+            StartCoroutine(SeleccionarDespuesDeFrame(botonASeleccionar.gameObject));
         }
     }
 
@@ -188,11 +243,11 @@ public class ManagerOptions : MonoBehaviour
                 MostrarCursorSegunInput();
             }
 
-            // Detectar botones del controlador
+            // Detectar botones del controlador - ✅ CÍRCULO INCLUIDO
             if (Gamepad.current.buttonSouth.wasPressedThisFrame ||
                 Gamepad.current.buttonEast.wasPressedThisFrame ||
                 Gamepad.current.buttonWest.wasPressedThisFrame ||
-                Gamepad.current.buttonNorth.wasPressedThisFrame)
+                Gamepad.current.buttonNorth.wasPressedThisFrame) // Círculo
             {
                 isUsingController = true;
                 MostrarCursorSegunInput();
@@ -206,7 +261,6 @@ public class ManagerOptions : MonoBehaviour
             MostrarCursorSegunInput();
         }
     }
-
 
     void MostrarCursorSegunInput()
     {
@@ -227,18 +281,6 @@ public class ManagerOptions : MonoBehaviour
         }
     }
 
-    void EstablecerPrimeraSeleccion(Button botonSeleccionado)
-    {
-        if (eventSystem != null && botonSeleccionado != null)
-        {
-            // Limpiar selecci�n actual
-            eventSystem.SetSelectedGameObject(null);
-
-            // Establecer nueva selecci�n despu�s de un frame
-            StartCoroutine(SeleccionarDespuesDeFrame(botonSeleccionado.gameObject));
-        }
-    }
-
     IEnumerator SeleccionarDespuesDeFrame(GameObject objetoASeleccionar)
     {
         yield return null; // Esperar un frame
@@ -256,10 +298,10 @@ public class ManagerOptions : MonoBehaviour
         PlayerMovementRef.validar_inputs = false;
         Time.timeScale = 0f;
 
-        // Establecer primera selecci�n para controlador
+        // Establecer primera selección para controlador
         EstablecerPrimeraSeleccion(firstSelectedPauseButton);
 
-        // Mostrar cursor seg�n tipo de input
+        // Mostrar cursor según tipo de input
         MostrarCursorSegunInput();
     }
 
@@ -269,11 +311,14 @@ public class ManagerOptions : MonoBehaviour
         PlayerMovementRef.validar_inputs = true;
         Time.timeScale = 1f;
 
-        // Limpiar selecci�n
+        // Limpiar selección
         if (eventSystem != null)
         {
             eventSystem.SetSelectedGameObject(null);
         }
+
+        // Limpiar memoria al salir completamente del menú
+        ultimoBotonSeleccionado = null;
 
         // Aggressively hide cursor - multiple attempts
         StartCoroutine(AggressiveHideCursor());
@@ -308,65 +353,76 @@ public class ManagerOptions : MonoBehaviour
         Debug.Log($"Final cursor state - Visible: {Cursor.visible}, LockState: {Cursor.lockState}");
     }
 
+    // ✅ MODIFICADO: Guardar botón antes de cambiar
     public void OptionsPause()
     {
+        GuardarBotonActual(); // ✅ Guardar antes de cambiar
+
         PausePanel.SetActive(false);
         OptionsPausePanel.SetActive(true);
         insideSubmenu = true;
 
-        // Establecer primera selecci�n para controlador
+        // Establecer primera selección para controlador
         EstablecerPrimeraSeleccion(firstSelectedOptionsButton);
 
-        // Mostrar cursor seg�n tipo de input
+        // Mostrar cursor según tipo de input
         MostrarCursorSegunInput();
     }
 
+    // ✅ MODIFICADO: Usar memoria al regresar
     public void BackOptionsPause()
     {
         OptionsPausePanel.SetActive(false);
         PausePanel.SetActive(true);
         insideSubmenu = false;
 
-        // Volver a establecer selecci�n del men� principal
-        EstablecerPrimeraSeleccion(firstSelectedPauseButton);
+        // ✅ Volver al botón que se presionó originalmente (usarMemoria = true)
+        EstablecerPrimeraSeleccion(firstSelectedPauseButton, usarMemoria: true);
 
-        // Mostrar cursor seg�n tipo de input
+        // Mostrar cursor según tipo de input
         MostrarCursorSegunInput();
     }
 
+    // ✅ MODIFICADO: Guardar botón antes de cambiar
     public void QuitToMenuPause()
     {
+        GuardarBotonActual(); // ✅ Guardar antes de cambiar
+
         PausePanel.SetActive(false);
         QuitToMenuPausePanel.SetActive(true);
         insideSubmenu = true;
 
-        // Establecer primera selecci�n para controlador
+        // Establecer primera selección para controlador
         EstablecerPrimeraSeleccion(firstSelectedQuitButton);
 
-        // Mostrar cursor seg�n tipo de input
+        // Mostrar cursor según tipo de input
         MostrarCursorSegunInput();
     }
 
     public void YesQuitToMenu()
     {
-        AudioManager.instance.RefreshSlidersAndTexts();
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.RefreshSlidersAndTexts();
+        }
         SceneManager.LoadScene(0);
     }
 
+    // ✅ MODIFICADO: Usar memoria al regresar
     public void NoQuitToMenu()
     {
         QuitToMenuPausePanel.SetActive(false);
         PausePanel.SetActive(true);
         insideSubmenu = false;
 
-        // Volver a establecer selecci�n del men� principal
-        EstablecerPrimeraSeleccion(firstSelectedPauseButton);
+        // ✅ Volver al botón que se presionó originalmente (usarMemoria = true)
+        EstablecerPrimeraSeleccion(firstSelectedPauseButton, usarMemoria: true);
 
-        // Mostrar cursor seg�n tipo de input
+        // Mostrar cursor según tipo de input
         MostrarCursorSegunInput();
     }
 
-    // M�todos p�blicos para configuraci�n externa
+    // Métodos públicos para configuración externa
     public void CambiarPrimeraSeleccionPausa(Button nuevoBoton)
     {
         firstSelectedPauseButton = nuevoBoton;

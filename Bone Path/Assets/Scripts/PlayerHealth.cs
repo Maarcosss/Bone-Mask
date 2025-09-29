@@ -1,4 +1,4 @@
-using UnityEngine;
+Ôªøusing UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 
@@ -17,17 +17,17 @@ public class PlayerHealth : MonoBehaviour
     int maxHealth = 3;
 
     // Alma (recurso para curarse)
-    public float maxSoul = 100f;      // alma m·xima
+    public float maxSoul = 100f;      // alma m√°xima
     public float currentSoul = 0f;    // alma actual
     [Range(0.01f, 1f)]
-    public float healCostPercent = 0.5f; // porcentaje del maxSoul que cuesta 1 curaciÛn (0.5 = 50%)
+    public float healCostPercent = 0.5f; // porcentaje del maxSoul que cuesta 1 curaci√≥n (0.5 = 50%)
 
-    // CuraciÛn por mantener tecla
-    public float healTime = 1.0f; // tiempo que hay que mantener E para curar 1 corazÛn
+    // Curaci√≥n por mantener tecla
+    public float healTime = 1.0f; // tiempo que hay que mantener L1 para curar 1 coraz√≥n
     private float healTimer = 0f;
     private bool isHealing = false;
 
-    // Invencibilidad/interrupciÛn
+    // Invencibilidad/interrupci√≥n
     private bool isInvincible = false;
     private float invincibleTime = 1.0f;
     private float invincibleTimer = 0f;
@@ -51,7 +51,7 @@ public class PlayerHealth : MonoBehaviour
         // ajustar por si currentSoul > maxSoul
         if (currentSoul > maxSoul) currentSoul = maxSoul;
         UpdateHeartsUI();
-        UpdateSoulUI(); // opcional (implementa esta funciÛn para mostrar barra de alma)
+        UpdateSoulUI(); // opcional (implementa esta funci√≥n para mostrar barra de alma)
 
         // Setup Input System
         SetupInputActions();
@@ -86,7 +86,9 @@ public class PlayerHealth : MonoBehaviour
         {
             healAction = new InputAction("Heal", InputActionType.Button);
             healAction.AddBinding("<Keyboard>/e");
-            healAction.AddBinding("<Gamepad>/buttonWest"); // Y/Triangle button
+
+            // ‚úÖ CAMBIADO: L1 en lugar de Y/Triangle
+            healAction.AddBinding("<Gamepad>/leftShoulder"); // L1/LB button
         }
 
         if (debugDamageAction == null)
@@ -140,7 +142,7 @@ public class PlayerHealth : MonoBehaviour
 
     void OnDebugDamage(InputAction.CallbackContext context)
     {
-        // TEST r·pido: perder vida con H (para debug)
+        // TEST r√°pido: perder vida con H (para debug)
         TakeDamage(1);
     }
 
@@ -156,10 +158,10 @@ public class PlayerHealth : MonoBehaviour
             }
         }
 
-        // Comenzar o mantener curaciÛn con Input System
+        // Comenzar o mantener curaci√≥n con Input System
         if (healHeld)
         {
-            // Solo si no est·s full health y tienes alma suficiente para una curaciÛn
+            // Solo si no est√°s full health y tienes alma suficiente para una curaci√≥n
             if (currentHealth < maxHealth && HasEnoughSoulForOneHeal())
             {
                 if (!isHealing)
@@ -167,36 +169,36 @@ public class PlayerHealth : MonoBehaviour
                     // iniciar conteo
                     isHealing = true;
                     healTimer = healTime;
-                    // aquÌ podrÌas bloquear movimiento/ataque si quieres
-                    Debug.Log("Iniciando curaciÛn... mantÈn E");
+                    // aqu√≠ podr√≠as bloquear movimiento/ataque si quieres
+                    Debug.Log("Iniciando curaci√≥n... mant√©n L1");
                 }
 
-                // descontar tiempo manteniÈndola
+                // descontar tiempo manteni√©ndola
                 if (isHealing)
                 {
                     healTimer -= Time.deltaTime;
 
-                    // Si completÛ el hold-time
+                    // Si complet√≥ el hold-time
                     if (healTimer <= 0f)
                     {
                         DoHealOneHeart();
 
-                        // Si todavÌa tienes alma y sigues manteniendo, reinicia para intentar otra curaciÛn
+                        // Si todav√≠a tienes alma y sigues manteniendo, reinicia para intentar otra curaci√≥n
                         if (currentHealth < maxHealth && HasEnoughSoulForOneHeal())
                         {
-                            healTimer = healTime; // volver a empezar para curar siguiente corazÛn
+                            healTimer = healTime; // volver a empezar para curar siguiente coraz√≥n
                             // isHealing queda true
                         }
                         else
                         {
-                            isHealing = false; // no m·s curaciÛn
+                            isHealing = false; // no m√°s curaci√≥n
                         }
                     }
                 }
             }
             else
             {
-                // No se puede iniciar curaciÛn (salud completa o alma insuficiente)
+                // No se puede iniciar curaci√≥n (salud completa o alma insuficiente)
                 if (isHealing)
                 {
                     isHealing = false;
@@ -205,12 +207,12 @@ public class PlayerHealth : MonoBehaviour
         }
         else
         {
-            // Si suelta la tecla, cancelar la curaciÛn en progreso (sin consumir alma)
+            // Si suelta la tecla, cancelar la curaci√≥n en progreso (sin consumir alma)
             if (isHealing)
             {
                 isHealing = false;
                 // opcional: resetear healTimer = healTime;
-                Debug.Log("CuraciÛn interrumpida (soltaste E)");
+                Debug.Log("Curaci√≥n interrumpida (soltaste L1)");
             }
         }
     }
@@ -227,7 +229,7 @@ public class PlayerHealth : MonoBehaviour
         UpdateSoulUI();
     }
 
-    // Realiza la curaciÛn: consume alma y suma 1 vida (si no est· a tope)
+    // Realiza la curaci√≥n: consume alma y suma 1 vida (si no est√° a tope)
     void DoHealOneHeart()
     {
         float cost = maxSoul * healCostPercent;
@@ -241,17 +243,17 @@ public class PlayerHealth : MonoBehaviour
             UpdateHeartsUI();
             UpdateSoulUI();
 
-            Debug.Log("CurÈ 1 corazÛn. Alma restante: " + currentSoul);
+            Debug.Log("Cur√© 1 coraz√≥n. Alma restante: " + currentSoul);
         }
         else
         {
             Debug.Log("No hay alma suficiente para curar.");
-            // si por alguna razÛn no hay alma suficiente (ej. se gastÛ en otra parte), cancelar
+            // si por alguna raz√≥n no hay alma suficiente (ej. se gast√≥ en otra parte), cancelar
             isHealing = false;
         }
     }
 
-    // Comprueba si tienes suficiente alma para curar 1 corazÛn
+    // Comprueba si tienes suficiente alma para curar 1 coraz√≥n
     bool HasEnoughSoulForOneHeal()
     {
         float cost = maxSoul * healCostPercent;
@@ -259,7 +261,7 @@ public class PlayerHealth : MonoBehaviour
         return false;
     }
 
-    // AÒadir alma (ll·malo desde el sistema de combate o al golpear enemigos)
+    // A√±adir alma (ll√°malo desde el sistema de combate o al golpear enemigos)
     public void AddSoul(float amount)
     {
         currentSoul += amount;
@@ -267,7 +269,7 @@ public class PlayerHealth : MonoBehaviour
         UpdateSoulUI();
     }
 
-    // Cuando el jugador recibe daÒo
+    // Cuando el jugador recibe da√±o
     public void TakeDamage(int damage)
     {
         if (isInvincible) return;
@@ -276,7 +278,7 @@ public class PlayerHealth : MonoBehaviour
         if (isHealing)
         {
             isHealing = false;
-            Debug.Log("CuraciÛn interrumpida por daÒo.");
+            Debug.Log("Curaci√≥n interrumpida por da√±o.");
         }
 
         currentHealth -= damage;
@@ -284,7 +286,7 @@ public class PlayerHealth : MonoBehaviour
 
         UpdateHeartsUI();
 
-        // activar invencibilidad breve para evitar perder m˙ltiples corazones de golpe
+        // activar invencibilidad breve para evitar perder m√∫ltiples corazones de golpe
         isInvincible = true;
         invincibleTimer = invincibleTime;
 
@@ -325,10 +327,10 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // Placeholder para actualizar UI de alma; implementa tu barra aquÌ o conecta la UI que quieras
+    // Placeholder para actualizar UI de alma; implementa tu barra aqu√≠ o conecta la UI que quieras
     void UpdateSoulUI()
     {
-        // Ejemplo de debug, puedes reemplazar con actualizaciÛn de Image.fillAmount, texto, etc.
+        // Ejemplo de debug, puedes reemplazar con actualizaci√≥n de Image.fillAmount, texto, etc.
         // Debug.Log("Alma: " + currentSoul + " / " + maxSoul);
     }
 

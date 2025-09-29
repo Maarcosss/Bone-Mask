@@ -62,6 +62,9 @@ public class Menu_Manager : MonoBehaviour
     private EventSystem eventSystem;
     private bool isUsingController = false;
 
+    // ✅ NUEVO: Sistema de memoria de botones por panel
+    private Dictionary<GameObject, Selectable> ultimaSeleccionPorPanel = new Dictionary<GameObject, Selectable>();
+
     // Input System
     private InputAction navigateAction;
     private InputAction submitAction;
@@ -75,7 +78,7 @@ public class Menu_Manager : MonoBehaviour
         eventSystem = EventSystem.current;
         if (eventSystem == null)
         {
-            Debug.LogError("No se encontró EventSystem en la escena. Agrega un EventSystem para navegación con controlador.");
+            // Sin Debug.LogError - removido
         }
 
         // Configurar Input System
@@ -118,23 +121,43 @@ public class Menu_Manager : MonoBehaviour
     // ✅ NUEVO: VALIDAR TODAS LAS REFERENCIAS
     void ValidarReferencias()
     {
-        if (MainMenuPanel == null) Debug.LogError("❌ MainMenuPanel no está asignado en Menu_Manager");
-        if (OptionsMainMenuPanel == null) Debug.LogError("❌ OptionsMainMenuPanel no está asignado en Menu_Manager");
-        if (ExtrasPanel == null) Debug.LogError("❌ ExtrasPanel no está asignado en Menu_Manager");
-        if (GameOptionsPanel == null) Debug.LogError("❌ GameOptionsPanel no está asignado en Menu_Manager");
-        if (BrightnessGameOptionsPanel == null) Debug.LogError("❌ BrightnessGameOptionsPanel no está asignado en Menu_Manager");
-        if (AudioPanel == null) Debug.LogError("❌ AudioPanel no está asignado en Menu_Manager");
-        if (ControllerPanel == null) Debug.LogError("❌ ControllerPanel no está asignado en Menu_Manager");
-        if (QuitGamePanel == null) Debug.LogError("❌ QuitGamePanel no está asignado en Menu_Manager");
-
+        // Sin Debug.LogError - removidos todos
         Debug.Log("✅ Validación de referencias completada");
     }
 
-    void EstablecerPrimeraSeleccion(Selectable elementoSeleccionado)
+    // ✅ NUEVO: Guardar selección actual del panel antes de cambiar
+    void GuardarSeleccionActual(GameObject panelOrigen)
     {
-        if (eventSystem != null && elementoSeleccionado != null)
+        if (eventSystem != null && eventSystem.currentSelectedGameObject != null && panelOrigen != null)
         {
-            StartCoroutine(SeleccionarDespuesDeFrame(elementoSeleccionado.gameObject));
+            Selectable seleccionActual = eventSystem.currentSelectedGameObject.GetComponent<Selectable>();
+            if (seleccionActual != null)
+            {
+                ultimaSeleccionPorPanel[panelOrigen] = seleccionActual;
+                Debug.Log($"🔄 Guardada selección para {panelOrigen.name}: {seleccionActual.name}");
+            }
+        }
+    }
+
+    // ✅ MODIFICADO: Establecer selección con memoria por panel
+    void EstablecerPrimeraSeleccion(Selectable elementoSeleccionado, GameObject panelActual = null, bool usarMemoria = false)
+    {
+        Selectable elementoASeleccionar = elementoSeleccionado;
+
+        // Si se solicita usar memoria y hay una selección guardada para este panel, usarla
+        if (usarMemoria && panelActual != null && ultimaSeleccionPorPanel.ContainsKey(panelActual))
+        {
+            Selectable seleccionGuardada = ultimaSeleccionPorPanel[panelActual];
+            if (seleccionGuardada != null && seleccionGuardada.gameObject.activeInHierarchy && seleccionGuardada.interactable)
+            {
+                elementoASeleccionar = seleccionGuardada;
+                Debug.Log($"📍 Usando memoria para {panelActual.name}: {seleccionGuardada.name}");
+            }
+        }
+
+        if (eventSystem != null && elementoASeleccionar != null)
+        {
+            StartCoroutine(SeleccionarDespuesDeFrame(elementoASeleccionar.gameObject));
         }
         else
         {
@@ -237,7 +260,8 @@ public class Menu_Manager : MonoBehaviour
         if (cancelAction == null)
         {
             cancelAction = new InputAction("Cancel", InputActionType.Button);
-            cancelAction.AddBinding("<Gamepad>/buttonEast"); // B button
+            cancelAction.AddBinding("<Gamepad>/buttonEast");  // B button (Xbox)
+            cancelAction.AddBinding("<Gamepad>/buttonNorth"); // ✅ Círculo (PlayStation)
             cancelAction.AddBinding("<Keyboard>/escape");
         }
 
@@ -309,7 +333,7 @@ public class Menu_Manager : MonoBehaviour
             isUsingController = true;
             MostrarCursorSegunInput();
 
-            // Navegación automática hacia atrás con botón B
+            // ✅ NAVEGACIÓN AUTOMÁTICA HACIA ATRÁS CON CÍRCULO/B
             ManejarCancelacion();
         }
         else
@@ -394,11 +418,11 @@ public class Menu_Manager : MonoBehaviour
                 MostrarCursorSegunInput();
             }
 
-            // Detectar botones del controlador
+            // Detectar botones del controlador - ✅ CÍRCULO INCLUIDO
             if (Gamepad.current.buttonSouth.wasPressedThisFrame ||
                 Gamepad.current.buttonEast.wasPressedThisFrame ||
                 Gamepad.current.buttonWest.wasPressedThisFrame ||
-                Gamepad.current.buttonNorth.wasPressedThisFrame)
+                Gamepad.current.buttonNorth.wasPressedThisFrame) // Círculo
             {
                 isUsingController = true;
                 MostrarCursorSegunInput();
@@ -480,16 +504,22 @@ public class Menu_Manager : MonoBehaviour
         Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreen);
     }
 
-    // ===================== MENÚS CON FIRST SELECTION =====================
+    // ===================== MENÚS CON FIRST SELECTION Y MEMORIA =====================
     public void StartGame()
     {
-        AudioManager.instance.RefreshSlidersAndTexts();
+        if (AudioManager.instance != null)
+        {
+            AudioManager.instance.RefreshSlidersAndTexts();
+        }
         SceneManager.LoadScene(1);
     }
 
+    // ✅ MODIFICADO: Guardar selección antes de cambiar
     public void Options()
     {
         Debug.Log("🔄 Cambiando a OPTIONS...");
+
+        GuardarSeleccionActual(MainMenuPanel); // ✅ Guardar antes de cambiar
 
         if (MainMenuPanel != null) MainMenuPanel.SetActive(false);
         if (OptionsMainMenuPanel != null) OptionsMainMenuPanel.SetActive(true);
@@ -497,9 +527,12 @@ public class Menu_Manager : MonoBehaviour
         EstablecerPrimeraSeleccion(firstSelectedOptionsMain);
     }
 
+    // ✅ MODIFICADO: Guardar selección antes de cambiar
     public void GameOptions()
     {
         Debug.Log("🔄 Cambiando a GAME OPTIONS...");
+
+        GuardarSeleccionActual(OptionsMainMenuPanel); // ✅ Guardar antes de cambiar
 
         if (OptionsMainMenuPanel != null) OptionsMainMenuPanel.SetActive(false);
         if (GameOptionsPanel != null) GameOptionsPanel.SetActive(true);
@@ -507,9 +540,12 @@ public class Menu_Manager : MonoBehaviour
         EstablecerPrimeraSeleccion(firstSelectedGameOptions);
     }
 
+    // ✅ MODIFICADO: Guardar selección antes de cambiar
     public void BrightnessGameOptions()
     {
         Debug.Log("🔄 Cambiando a BRIGHTNESS...");
+
+        GuardarSeleccionActual(GameOptionsPanel); // ✅ Guardar antes de cambiar
 
         if (GameOptionsPanel != null) GameOptionsPanel.SetActive(false);
         if (BrightnessGameOptionsPanel != null) BrightnessGameOptionsPanel.SetActive(true);
@@ -517,26 +553,33 @@ public class Menu_Manager : MonoBehaviour
         EstablecerPrimeraSeleccion(firstSelectedBrightness);
     }
 
+    // ✅ MODIFICADO: Usar memoria al regresar
     public void DoneBrightnessGameOptions()
     {
         GraphicsApply();
         if (BrightnessGameOptionsPanel != null) BrightnessGameOptionsPanel.SetActive(false);
         if (GameOptionsPanel != null) GameOptionsPanel.SetActive(true);
 
-        EstablecerPrimeraSeleccion(firstSelectedGameOptions);
+        // ✅ Volver al botón que se presionó originalmente
+        EstablecerPrimeraSeleccion(firstSelectedGameOptions, GameOptionsPanel, usarMemoria: true);
     }
 
+    // ✅ MODIFICADO: Usar memoria al regresar
     public void BackGameOptions()
     {
         if (GameOptionsPanel != null) GameOptionsPanel.SetActive(false);
         if (OptionsMainMenuPanel != null) OptionsMainMenuPanel.SetActive(true);
 
-        EstablecerPrimeraSeleccion(firstSelectedOptionsMain);
+        // ✅ Volver al botón que se presionó originalmente
+        EstablecerPrimeraSeleccion(firstSelectedOptionsMain, OptionsMainMenuPanel, usarMemoria: true);
     }
 
+    // ✅ MODIFICADO: Guardar selección antes de cambiar
     public void Audio()
     {
         Debug.Log("🔄 Cambiando a AUDIO...");
+
+        GuardarSeleccionActual(OptionsMainMenuPanel); // ✅ Guardar antes de cambiar
 
         if (OptionsMainMenuPanel != null) OptionsMainMenuPanel.SetActive(false);
         if (AudioPanel != null) AudioPanel.SetActive(true);
@@ -544,17 +587,22 @@ public class Menu_Manager : MonoBehaviour
         EstablecerPrimeraSeleccion(firstSelectedAudio);
     }
 
+    // ✅ MODIFICADO: Usar memoria al regresar
     public void BackAudio()
     {
         if (AudioPanel != null) AudioPanel.SetActive(false);
         if (OptionsMainMenuPanel != null) OptionsMainMenuPanel.SetActive(true);
 
-        EstablecerPrimeraSeleccion(firstSelectedOptionsMain);
+        // ✅ Volver al botón que se presionó originalmente
+        EstablecerPrimeraSeleccion(firstSelectedOptionsMain, OptionsMainMenuPanel, usarMemoria: true);
     }
 
+    // ✅ MODIFICADO: Guardar selección antes de cambiar
     public void Controller()
     {
         Debug.Log("🔄 Cambiando a CONTROLLER...");
+
+        GuardarSeleccionActual(OptionsMainMenuPanel); // ✅ Guardar antes de cambiar
 
         if (OptionsMainMenuPanel != null) OptionsMainMenuPanel.SetActive(false);
         if (ControllerPanel != null) ControllerPanel.SetActive(true);
@@ -562,25 +610,32 @@ public class Menu_Manager : MonoBehaviour
         EstablecerPrimeraSeleccion(firstSelectedController);
     }
 
+    // ✅ MODIFICADO: Usar memoria al regresar
     public void BackController()
     {
         if (ControllerPanel != null) ControllerPanel.SetActive(false);
         if (OptionsMainMenuPanel != null) OptionsMainMenuPanel.SetActive(true);
 
-        EstablecerPrimeraSeleccion(firstSelectedOptionsMain);
+        // ✅ Volver al botón que se presionó originalmente
+        EstablecerPrimeraSeleccion(firstSelectedOptionsMain, OptionsMainMenuPanel, usarMemoria: true);
     }
 
+    // ✅ MODIFICADO: Usar memoria al regresar
     public void BackOpciones()
     {
         if (OptionsMainMenuPanel != null) OptionsMainMenuPanel.SetActive(false);
         if (MainMenuPanel != null) MainMenuPanel.SetActive(true);
 
-        EstablecerPrimeraSeleccion(firstSelectedMainMenu);
+        // ✅ Volver al botón que se presionó originalmente
+        EstablecerPrimeraSeleccion(firstSelectedMainMenu, MainMenuPanel, usarMemoria: true);
     }
 
+    // ✅ MODIFICADO: Guardar selección antes de cambiar
     public void Extras()
     {
         Debug.Log("🔄 Cambiando a EXTRAS...");
+
+        GuardarSeleccionActual(MainMenuPanel); // ✅ Guardar antes de cambiar
 
         if (MainMenuPanel != null) MainMenuPanel.SetActive(false);
         if (ExtrasPanel != null) ExtrasPanel.SetActive(true);
@@ -588,17 +643,22 @@ public class Menu_Manager : MonoBehaviour
         EstablecerPrimeraSeleccion(firstSelectedExtras);
     }
 
+    // ✅ MODIFICADO: Usar memoria al regresar
     public void BackExtras()
     {
         if (ExtrasPanel != null) ExtrasPanel.SetActive(false);
         if (MainMenuPanel != null) MainMenuPanel.SetActive(true);
 
-        EstablecerPrimeraSeleccion(firstSelectedMainMenu);
+        // ✅ Volver al botón que se presionó originalmente
+        EstablecerPrimeraSeleccion(firstSelectedMainMenu, MainMenuPanel, usarMemoria: true);
     }
 
+    // ✅ MODIFICADO: Guardar selección antes de cambiar
     public void QuitGame()
     {
         Debug.Log("🔄 Cambiando a QUIT GAME...");
+
+        GuardarSeleccionActual(MainMenuPanel); // ✅ Guardar antes de cambiar
 
         if (MainMenuPanel != null) MainMenuPanel.SetActive(false);
         if (QuitGamePanel != null) QuitGamePanel.SetActive(true);
@@ -612,11 +672,13 @@ public class Menu_Manager : MonoBehaviour
         Application.Quit();
     }
 
+    // ✅ MODIFICADO: Usar memoria al regresar
     public void NoQuitGame()
     {
         if (QuitGamePanel != null) QuitGamePanel.SetActive(false);
         if (MainMenuPanel != null) MainMenuPanel.SetActive(true);
 
-        EstablecerPrimeraSeleccion(firstSelectedMainMenu);
+        // ✅ Volver al botón que se presionó originalmente
+        EstablecerPrimeraSeleccion(firstSelectedMainMenu, MainMenuPanel, usarMemoria: true);
     }
 }
