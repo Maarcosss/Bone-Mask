@@ -1,4 +1,4 @@
-using UnityEngine;
+Ôªøusing UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
 using TMPro;
@@ -55,7 +55,7 @@ public class AudioManager : MonoBehaviour
 
     void Start()
     {
-        // Inicializar sliders y textos si est·n asignados
+        // Inicializar sliders y textos si est√°n asignados
         RefreshSlidersAndTexts();
     }
 
@@ -116,12 +116,12 @@ public class AudioManager : MonoBehaviour
     // Actualiza sliders y textos TMP (llamar al cargar nueva escena)
     public void RefreshSlidersAndTexts()
     {
-        // Buscar sliders si no est·n asignados
+        // Buscar sliders si no est√°n asignados
         if (masterSlider == null) masterSlider = GameObject.Find("MasterSlider")?.GetComponent<Slider>();
         if (musicSlider == null) musicSlider = GameObject.Find("MusicSlider")?.GetComponent<Slider>();
         if (sfxSlider == null) sfxSlider = GameObject.Find("SFXSlider")?.GetComponent<Slider>();
 
-        // Buscar textos TMP si no est·n asignados
+        // Buscar textos TMP si no est√°n asignados
         if (masterText == null) masterText = GameObject.Find("MasterText")?.GetComponent<TextMeshProUGUI>();
         if (musicText == null) musicText = GameObject.Find("MusicText")?.GetComponent<TextMeshProUGUI>();
         if (sfxText == null) sfxText = GameObject.Find("SFXText")?.GetComponent<TextMeshProUGUI>();

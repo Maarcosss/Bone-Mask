@@ -32,22 +32,42 @@ public class PlayerHealth : MonoBehaviour
     private float invincibleTime = 1.0f;
     private float invincibleTimer = 0f;
 
+    // Variables para knockback del jugador
+    [Header("Knockback Settings")]
+    [Tooltip("Fuerza del knockback cuando recibe daño")]
+    public float knockbackForce = 3f;
+
+    [Tooltip("Duración del knockback")]
+    public float knockbackDuration = 0.2f;
+
     [Header("Input System")]
     public InputActionAsset inputActions;
 
+    [Header("Debug")]
+    [Tooltip("Mostrar logs de debug")]
+    public bool showDebugLogs = false;
+
+    // ✅ ELIMINADO: debugDamageAction - Ya no existe el atajo de H
     // Input actions
     private InputAction healAction;
-    private InputAction debugDamageAction; // Optional for testing
 
     // Input values
     private bool healPressed;
     private bool healHeld;
+
+    // Variables para knockback
+    private Rigidbody playerRb;
+    private Vector3 knockbackVelocity = Vector3.zero;
+    private float knockbackTimer = 0f;
 
     public int GetCurrentHealth() => currentHealth;
     public float GetCurrentSoul() => currentSoul;
 
     void Start()
     {
+        // Obtener Rigidbody del jugador
+        playerRb = GetComponent<Rigidbody>();
+
         // ajustar por si currentSoul > maxSoul
         if (currentSoul > maxSoul) currentSoul = maxSoul;
         UpdateHeartsUI();
@@ -55,6 +75,9 @@ public class PlayerHealth : MonoBehaviour
 
         // Setup Input System
         SetupInputActions();
+
+        if (showDebugLogs)
+            Debug.Log($"💚 PlayerHealth iniciado | HP: {currentHealth}/{maxHealth} | Alma: {currentSoul}/{maxSoul}");
     }
 
     void SetupInputActions()
@@ -74,10 +97,6 @@ public class PlayerHealth : MonoBehaviour
             {
                 // Try to use the existing Interact action for healing
                 healAction = playerActionMap.FindAction("Interact");
-
-                // Create debug damage action (optional)
-                debugDamageAction = new InputAction("DebugDamage", InputActionType.Button);
-                debugDamageAction.AddBinding("<Keyboard>/h");
             }
         }
 
@@ -86,16 +105,10 @@ public class PlayerHealth : MonoBehaviour
         {
             healAction = new InputAction("Heal", InputActionType.Button);
             healAction.AddBinding("<Keyboard>/e");
-
-            // ✅ CAMBIADO: L1 en lugar de Y/Triangle
             healAction.AddBinding("<Gamepad>/leftShoulder"); // L1/LB button
         }
 
-        if (debugDamageAction == null)
-        {
-            debugDamageAction = new InputAction("DebugDamage", InputActionType.Button);
-            debugDamageAction.AddBinding("<Keyboard>/h");
-        }
+        // ✅ ELIMINADO: No más configuración de debugDamageAction
 
         // Setup input callbacks
         SetupInputCallbacks();
@@ -109,20 +122,19 @@ public class PlayerHealth : MonoBehaviour
         healAction.started += OnHealStarted;
         healAction.canceled += OnHealCanceled;
 
-        // Optional debug damage (remove in final build)
-        debugDamageAction.started += OnDebugDamage;
+        // ✅ ELIMINADO: debugDamageAction.started callback
     }
 
     void EnableInputActions()
     {
         healAction?.Enable();
-        debugDamageAction?.Enable();
+        // ✅ ELIMINADO: debugDamageAction?.Enable();
     }
 
     void DisableInputActions()
     {
         healAction?.Disable();
-        debugDamageAction?.Disable();
+        // ✅ ELIMINADO: debugDamageAction?.Disable();
     }
 
     void OnDestroy()
@@ -140,14 +152,13 @@ public class PlayerHealth : MonoBehaviour
         healHeld = false;
     }
 
-    void OnDebugDamage(InputAction.CallbackContext context)
-    {
-        // TEST rápido: perder vida con H (para debug)
-        TakeDamage(1);
-    }
+    // ✅ ELIMINADO: OnDebugDamage method - Ya no existe el atajo
 
     void Update()
     {
+        // Procesar knockback del jugador
+        UpdateKnockback();
+
         // temporizador de invencibilidad
         if (isInvincible)
         {
@@ -155,6 +166,9 @@ public class PlayerHealth : MonoBehaviour
             if (invincibleTimer <= 0f)
             {
                 isInvincible = false;
+
+                if (showDebugLogs)
+                    Debug.Log("🛡️ Invencibilidad terminada");
             }
         }
 
@@ -169,7 +183,6 @@ public class PlayerHealth : MonoBehaviour
                     // iniciar conteo
                     isHealing = true;
                     healTimer = healTime;
-                    // aquí podrías bloquear movimiento/ataque si quieres
                     Debug.Log("Iniciando curación... mantén L1");
                 }
 
@@ -211,8 +224,41 @@ public class PlayerHealth : MonoBehaviour
             if (isHealing)
             {
                 isHealing = false;
-                // opcional: resetear healTimer = healTime;
                 Debug.Log("Curación interrumpida (soltaste L1)");
+            }
+        }
+    }
+
+    // Manejar knockback del jugador
+    void UpdateKnockback()
+    {
+        if (knockbackTimer > 0f && playerRb != null)
+        {
+            knockbackTimer -= Time.deltaTime;
+
+            if (!playerRb.isKinematic)
+            {
+                // Aplicar drag progresivo
+                Vector3 currentVel = playerRb.velocity;
+                currentVel.x = Mathf.Lerp(currentVel.x, 0f, 8f * Time.deltaTime);
+                currentVel.z = Mathf.Lerp(currentVel.z, 0f, 8f * Time.deltaTime);
+                playerRb.velocity = currentVel;
+            }
+
+            // Detener knockback
+            if (knockbackTimer <= 0f)
+            {
+                knockbackVelocity = Vector3.zero;
+                if (playerRb != null)
+                {
+                    Vector3 vel = playerRb.velocity;
+                    vel.x = 0f;
+                    vel.z = 0f;
+                    playerRb.velocity = vel; // Mantener Y para gravedad
+                }
+
+                if (showDebugLogs)
+                    Debug.Log("🛑 Knockback del jugador terminado");
             }
         }
     }
@@ -267,12 +313,26 @@ public class PlayerHealth : MonoBehaviour
         currentSoul += amount;
         if (currentSoul > maxSoul) currentSoul = maxSoul;
         UpdateSoulUI();
+
+        if (showDebugLogs)
+            Debug.Log($"💙 +{amount} alma añadida. Total: {currentSoul}/{maxSoul}");
     }
 
-    // Cuando el jugador recibe daño
+    // TakeDamage con sobrecarga para ambos casos
     public void TakeDamage(int damage)
     {
-        if (isInvincible) return;
+        TakeDamage(damage, Vector3.zero); // Usar versión con hitDirection por defecto
+    }
+
+    // TakeDamage con dirección del golpe
+    public void TakeDamage(int damage, Vector3 hitDirection)
+    {
+        if (isInvincible)
+        {
+            if (showDebugLogs)
+                Debug.Log("🛡️ Daño bloqueado por invencibilidad");
+            return;
+        }
 
         // Si estaba curando, interrumpe sin consumir alma
         if (isHealing)
@@ -281,19 +341,51 @@ public class PlayerHealth : MonoBehaviour
             Debug.Log("Curación interrumpida por daño.");
         }
 
+        int previousHealth = currentHealth;
         currentHealth -= damage;
         if (currentHealth < 0) currentHealth = 0;
 
         UpdateHeartsUI();
 
+        // Aplicar knockback si hay dirección
+        if (hitDirection != Vector3.zero && playerRb != null)
+        {
+            ApplyKnockback(hitDirection);
+        }
+
         // activar invencibilidad breve para evitar perder múltiples corazones de golpe
         isInvincible = true;
         invincibleTimer = invincibleTime;
+
+        if (showDebugLogs)
+            Debug.Log($"💔 DAÑO RECIBIDO: {damage} | HP: {previousHealth} → {currentHealth} | Knockback: {hitDirection != Vector3.zero}");
 
         if (currentHealth <= 0)
         {
             Die();
         }
+    }
+
+    // Aplicar knockback al jugador
+    void ApplyKnockback(Vector3 hitDirection)
+    {
+        if (playerRb == null) return;
+
+        // Aplicar knockback inmediato
+        Vector3 knockback = hitDirection.normalized * knockbackForce;
+        knockback.y = 0f; // No knockback vertical
+
+        playerRb.velocity = new Vector3(knockback.x, playerRb.velocity.y, knockback.z);
+        knockbackTimer = knockbackDuration;
+
+        if (showDebugLogs)
+            Debug.Log($"👊 Knockback aplicado al jugador: {knockback}");
+    }
+
+    // Método para verificar si está en knockback
+    public bool IsInKnockback()
+    {
+        return knockbackTimer > 0f;
     }
 
     // Actualizar UI de corazones (sin arrays ni ternarios)
@@ -336,7 +428,7 @@ public class PlayerHealth : MonoBehaviour
 
     void Die()
     {
-        Debug.Log("Jugador ha muerto");
+        Debug.Log("💀 Jugador ha muerto");
         // reiniciar nivel, mostrar pantalla de muerte, etc.
     }
 }

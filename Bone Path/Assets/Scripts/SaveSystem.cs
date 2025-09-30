@@ -12,6 +12,9 @@ public class SaveSystem : MonoBehaviour
     [Tooltip("Mostrar mensajes de debug del sistema de guardado")]
     public bool showDebugMessages = true;
 
+    [Tooltip("Guardar monedas automáticamente")]
+    public bool saveCurrencyAutomatically = true;
+
     // Sistema de guardado
     private string saveFile;
     private bool nearCheckpoint = false;
@@ -21,12 +24,13 @@ public class SaveSystem : MonoBehaviour
     private InputAction saveAction;
 
     [System.Serializable]
-    class SaveData
+    public class SaveData  // ← CAMBIADO DE 'class' A 'public class'
     {
         public float x, y, z;
         public int health;
         public float soul;
         public string scene;
+        public int coins;
     }
 
     void Start()
@@ -45,6 +49,36 @@ public class SaveSystem : MonoBehaviour
 
         SetupInputActions();
         LoadGame();
+
+        // Suscribirse a eventos del sistema de monedas si está habilitado
+        if (saveCurrencyAutomatically)
+        {
+            SubscribeToCurrencyEvents();
+        }
+    }
+
+    void SubscribeToCurrencyEvents()
+    {
+        CurrencySystem.OnCoinsChanged += OnCoinsChanged;
+    }
+
+    void OnDestroy()
+    {
+        saveAction?.Disable();
+
+        // Desuscribirse de eventos
+        if (saveCurrencyAutomatically)
+        {
+            CurrencySystem.OnCoinsChanged -= OnCoinsChanged;
+        }
+    }
+
+    void OnCoinsChanged(int newCoinAmount)
+    {
+        if (saveCurrencyAutomatically)
+        {
+            SaveCurrencyOnly();
+        }
     }
 
     void SetupInputActions()
@@ -78,11 +112,6 @@ public class SaveSystem : MonoBehaviour
         saveAction?.Enable();
     }
 
-    void OnDestroy()
-    {
-        saveAction?.Disable();
-    }
-
     void OnSave(InputAction.CallbackContext context)
     {
         if (nearCheckpoint)
@@ -114,18 +143,42 @@ public class SaveSystem : MonoBehaviour
         data.soul = ph.GetCurrentSoul();
         data.scene = SceneManager.GetActiveScene().name;
 
+        // Guardar monedas
+        if (CurrencySystem.Instance != null)
+        {
+            data.coins = CurrencySystem.Instance.GetCurrentCoins();
+        }
+        else
+        {
+            data.coins = 0;
+            if (showDebugMessages)
+                Debug.LogWarning("⚠️ CurrencySystem no encontrado - guardando 0 monedas");
+        }
+
         try
         {
             string json = JsonUtility.ToJson(data, true);
             File.WriteAllText(saveFile, json);
 
             if (showDebugMessages)
-                Debug.Log("✅ Juego guardado en checkpoint");
+                Debug.Log($"✅ Juego guardado | HP: {data.health} | Alma: {data.soul} | Monedas: {data.coins}");
         }
         catch (System.Exception e)
         {
             Debug.LogError($"❌ Error al guardar: {e.Message}");
         }
+    }
+
+    void SaveCurrencyOnly()
+    {
+        if (CurrencySystem.Instance == null) return;
+
+        // Solo guardar las monedas en PlayerPrefs para actualizaciones rápidas
+        PlayerPrefs.SetInt("PlayerCoins", CurrencySystem.Instance.GetCurrentCoins());
+        PlayerPrefs.Save();
+
+        if (showDebugMessages)
+            Debug.Log($"💰 Monedas guardadas automáticamente: {CurrencySystem.Instance.GetCurrentCoins()}");
     }
 
     void LoadGame()
@@ -134,6 +187,9 @@ public class SaveSystem : MonoBehaviour
         {
             if (showDebugMessages)
                 Debug.Log("📁 No hay partida guardada");
+
+            // Cargar monedas desde PlayerPrefs como respaldo
+            LoadCurrencyFromPrefs();
             return;
         }
 
@@ -159,18 +215,52 @@ public class SaveSystem : MonoBehaviour
                     ph.SetCurrentSoul(data.soul);
                 }
 
+                // Cargar monedas
+                if (CurrencySystem.Instance != null)
+                {
+                    CurrencySystem.Instance.SetCoins(data.coins);
+                }
+                else
+                {
+                    // Guardar en PlayerPrefs para cargar más tarde
+                    PlayerPrefs.SetInt("PlayerCoins", data.coins);
+                    if (showDebugMessages)
+                        Debug.Log($"💰 Monedas guardadas en PlayerPrefs para cargar más tarde: {data.coins}");
+                }
+
                 if (showDebugMessages)
-                    Debug.Log("📂 Partida cargada correctamente");
+                    Debug.Log($"📂 Partida cargada | HP: {data.health} | Alma: {data.soul} | Monedas: {data.coins}");
             }
             else
             {
                 if (showDebugMessages)
                     Debug.Log($"📁 El guardado es de otra escena: {data.scene}");
+
+                // Aún así cargar las monedas
+                if (CurrencySystem.Instance != null)
+                {
+                    CurrencySystem.Instance.SetCoins(data.coins);
+                }
             }
         }
         catch (System.Exception e)
         {
             Debug.LogError($"❌ Error al cargar partida: {e.Message}");
+
+            // Cargar monedas desde PlayerPrefs como respaldo
+            LoadCurrencyFromPrefs();
+        }
+    }
+
+    void LoadCurrencyFromPrefs()
+    {
+        if (CurrencySystem.Instance != null)
+        {
+            int savedCoins = PlayerPrefs.GetInt("PlayerCoins", 0);
+            CurrencySystem.Instance.SetCoins(savedCoins);
+
+            if (showDebugMessages)
+                Debug.Log($"💰 Monedas cargadas desde PlayerPrefs: {savedCoins}");
         }
     }
 
@@ -205,6 +295,11 @@ public class SaveSystem : MonoBehaviour
         LoadGame();
     }
 
+    public void ForceSaveCurrency()
+    {
+        SaveCurrencyOnly();
+    }
+
     public bool HasSaveFile()
     {
         return File.Exists(saveFile);
@@ -217,6 +312,37 @@ public class SaveSystem : MonoBehaviour
             File.Delete(saveFile);
             if (showDebugMessages)
                 Debug.Log("🗑️ Partida eliminada");
+        }
+
+        // También limpiar PlayerPrefs de monedas
+        PlayerPrefs.DeleteKey("PlayerCoins");
+        PlayerPrefs.Save();
+    }
+
+    // Información del sistema para debugging
+    public string GetSaveSystemInfo()
+    {
+        string fileExists = HasSaveFile() ? "✅" : "❌";
+        string nearCheck = nearCheckpoint ? "✅" : "❌";
+        string currencySystem = CurrencySystem.Instance != null ? "✅" : "❌";
+
+        return $"SaveSystem | Archivo: {fileExists} | Checkpoint: {nearCheck} | Currency: {currencySystem} | Auto-save coins: {saveCurrencyAutomatically}";
+    }
+
+    // Método para obtener información del save actual
+    public SaveData GetCurrentSaveData()
+    {
+        if (!File.Exists(saveFile)) return null;
+
+        try
+        {
+            string json = File.ReadAllText(saveFile);
+            return JsonUtility.FromJson<SaveData>(json);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"❌ Error al leer save data: {e.Message}");
+            return null;
         }
     }
 }

@@ -1,6 +1,5 @@
 Fix:
  · Tutorial HUD
- · Camara
  · TXT audios entre escenas
  · Ocultar cursor pausa ESC
  · Collider texto ajustar
@@ -10,7 +9,7 @@ Fix:
  · Cambiar controles mando
  · Debugs Logs and logserros
  · NPC no funca na
- · Quitar daño jugador collision enemigo
+ · Knockback enemy
 Do:
  · Animación/Transición de escena a escena
  · Audio valores
@@ -22,13 +21,12 @@ Do:
  · Oclusión culing
  · Animación corazon curarse y daño
  · Lanza que se clava
- · Imagen brillo ejemplo
- · Poner juego pantalla en ventana
  · Atajos resolución emergency
  · Aplicar cambios entre escenas, graficos, resolución, audio, controles...
  · Nueva estética main menú
  · Márgenes seguros textos y medidas separaciones iguales
- · Cooldown mirar hacia arriba o abajo
+ · Ocultar first selection si esta usando teclado
+ · Ocultar ratón siempre mientras juego
 
 Probar:
  · Salto igualitario en PCs
