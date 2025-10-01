@@ -1994,6 +1994,7 @@ MonoBehaviour:
   masterText: {fileID: 947015661}
   musicText: {fileID: 615635953}
   sfxText: {fileID: 1948815981}
+  showDebugLogs: 1
 --- !u!4 &331233498
 Transform:
   m_ObjectHideFlags: 0
@@ -3896,10 +3897,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fbcf6c2b1c22004d9e1f03f12c0dfce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  masterSlider: {fileID: 751786713}
-  musicSlider: {fileID: 1509882619}
-  sfxSlider: {fileID: 300111874}
-  showDebugLogs: 0
 --- !u!4 &639620914
 Transform:
   m_ObjectHideFlags: 0

@@ -401,9 +401,9 @@ public class ManagerOptions : MonoBehaviour
 
     public void YesQuitToMenu()
     {
-        if (AudioManager.instance != null)
+        if (AudioManager.Instance != null)
         {
-            AudioManager.instance.RefreshSlidersAndTexts();
+            AudioManager.Instance.RefreshSlidersAndTexts();
         }
         SceneManager.LoadScene(0);
     }

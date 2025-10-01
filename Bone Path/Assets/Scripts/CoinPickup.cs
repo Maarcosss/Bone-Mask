@@ -9,17 +9,7 @@ public class CoinPickup : MonoBehaviour
     [Tooltip("Auto-destruir después de ser recogida")]
     public bool autoDestroy = true;
 
-    [Header("Visual Effects")]
-    [Tooltip("Animación de rotación de la moneda")]
-    public float rotationSpeed = 90f;
-
     [Header("Physics Settings")]
-    [Tooltip("Restringir movimiento en Z (para falso 2D)")]
-    public bool restrictZMovement = true;
-
-    [Tooltip("Posición Z fija cuando está restringido")]
-    public float fixedZPosition = 0f;
-
     [Tooltip("Fuerza mínima para recoger la moneda")]
     public float minimumCollisionForce = 0.1f;
 
@@ -34,32 +24,9 @@ public class CoinPickup : MonoBehaviour
     // Variables privadas
     private bool isCollected = false;
     private AudioSource audioSource;
-    private Rigidbody rb;
 
     void Start()
     {
-        rb = GetComponent<Rigidbody>();
-
-        // Configurar Z fijo si está habilitado
-        if (restrictZMovement)
-        {
-            fixedZPosition = transform.position.z;
-        }
-
-        // ✅ CONFIGURAR RIGIDBODY PARA FÍSICA REAL CON RESTRICCIÓN Z
-        if (rb != null && restrictZMovement)
-        {
-            // Solo restringir rotación en X e Y, y posición en Z
-            rb.constraints = RigidbodyConstraints.FreezePositionZ |
-                           RigidbodyConstraints.FreezeRotationX |
-                           RigidbodyConstraints.FreezeRotationZ;
-
-            // Configurar física para que se comporte bien
-            rb.drag = 0.5f;          // Un poco de resistencia al aire
-            rb.angularDrag = 1f;     // Resistencia rotacional
-            rb.mass = 0.1f;          // Ligeras para que sean fáciles de mover
-        }
-
         // ✅ CONFIGURAR AUDIO
         if (customPickupSound != null)
         {
@@ -74,40 +41,10 @@ public class CoinPickup : MonoBehaviour
         }
 
         if (showDebugLogs)
-            Debug.Log($"💰 Moneda física creada | Valor: {coinValue} | Restrict Z: {restrictZMovement}");
+            Debug.Log($"💰 Moneda creada | Valor: {coinValue}");
     }
 
-    void Update()
-    {
-        if (isCollected) return;
-
-        // ✅ MANTENER Z FIJO SI ESTÁ RESTRINGIDO
-        if (restrictZMovement && rb != null)
-        {
-            Vector3 pos = transform.position;
-            if (Mathf.Abs(pos.z - fixedZPosition) > 0.01f)
-            {
-                pos.z = fixedZPosition;
-                transform.position = pos;
-            }
-        }
-
-        // ✅ ROTACIÓN SUAVE
-        transform.Rotate(0, rotationSpeed * Time.deltaTime, 0);
-    }
-
-    void FixedUpdate()
-    {
-        // ✅ ASEGURAR QUE Z SE MANTENGA FIJO EN FÍSICA
-        if (restrictZMovement && rb != null)
-        {
-            Vector3 velocity = rb.velocity;
-            velocity.z = 0f; // Eliminar cualquier velocidad en Z
-            rb.velocity = velocity;
-        }
-    }
-
-    // ✅ COLISIÓN FÍSICA EN LUGAR DE TRIGGER
+    // ✅ DETECTAR COLISIÓN CON JUGADOR
     void OnCollisionEnter(Collision collision)
     {
         if (isCollected) return;
@@ -139,6 +76,7 @@ public class CoinPickup : MonoBehaviour
             Debug.Log($"💰 ¡MONEDA RECOGIDA! Valor: +{coinValue}");
 
         // ✅ DETENER FÍSICA INMEDIATAMENTE
+        Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
             rb.velocity = Vector3.zero;
@@ -184,23 +122,21 @@ public class CoinPickup : MonoBehaviour
         }
     }
 
-    // ✅ MÉTODO PARA CONFIGURAR FÍSICA ESPECÍFICA
+    // ✅ MÉTODO VACÍO PARA COMPATIBILIDAD CON ENEMY.CS
     public void SetupPhysics(bool restrictZ = true, float zPos = 0f)
     {
-        restrictZMovement = restrictZ;
-        fixedZPosition = zPos;
+        // Método vacío - toda configuración se hace manualmente en Inspector
+        if (showDebugLogs)
+            Debug.Log($"💰 SetupPhysics llamado - configuración manual requerida");
+    }
 
-        if (rb == null) rb = GetComponent<Rigidbody>();
-
-        if (rb != null && restrictZMovement)
-        {
-            rb.constraints = RigidbodyConstraints.FreezePositionZ |
-                           RigidbodyConstraints.FreezeRotationX |
-                           RigidbodyConstraints.FreezeRotationZ;
-        }
+    // Método para establecer el valor dinámicamente
+    public void SetCoinValue(int newValue)
+    {
+        coinValue = Mathf.Max(1, newValue);
 
         if (showDebugLogs)
-            Debug.Log($"💰 Física configurada | Restrict Z: {restrictZ} | Z Position: {zPos}");
+            Debug.Log($"💰 Valor de moneda cambiado a: {coinValue}");
     }
 
     // Método para reactivar la moneda (útil para respawn)
@@ -208,6 +144,7 @@ public class CoinPickup : MonoBehaviour
     {
         isCollected = false;
 
+        Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
             rb.isKinematic = false;
@@ -220,14 +157,5 @@ public class CoinPickup : MonoBehaviour
 
         if (showDebugLogs)
             Debug.Log($"🔄 Moneda reseteada");
-    }
-
-    // Método para establecer el valor dinámicamente
-    public void SetCoinValue(int newValue)
-    {
-        coinValue = Mathf.Max(1, newValue);
-
-        if (showDebugLogs)
-            Debug.Log($"💰 Valor de moneda cambiado a: {coinValue}");
     }
 }

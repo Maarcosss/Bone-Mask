@@ -15,12 +15,31 @@ public class BrightnessManager : MonoBehaviour
     [Tooltip("Mostrar logs de debug")]
     public bool showDebugLogs = false;
 
+    // ✅ SINGLETON IMPLEMENTATION
+    public static BrightnessManager Instance { get; private set; }
+
     private ColorAdjustments colorAdjustments;
     private bool isInitialized = false;
 
     private void Awake()
     {
-        InitializeBrightnessSystem();
+        // ✅ SINGLETON IMPLEMENTATION
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            InitializeBrightnessSystem();
+
+            if (showDebugLogs)
+                Debug.Log("🔆 BrightnessManager Singleton inicializado");
+        }
+        else
+        {
+            if (showDebugLogs)
+                Debug.Log("🔆 BrightnessManager duplicado destruido");
+            Destroy(gameObject);
+            return;
+        }
     }
 
     void InitializeBrightnessSystem()

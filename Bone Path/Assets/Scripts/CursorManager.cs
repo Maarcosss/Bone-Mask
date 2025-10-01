@@ -14,22 +14,29 @@ public class CursorManager : MonoBehaviour
     [Tooltip("Estado actual del input")]
     public bool isUsingController = false;
 
-    // Singleton para acceso global
+    // ✅ SINGLETON (único static permitido)
     public static CursorManager Instance { get; private set; }
 
     // Estado anterior para detectar cambios
     private bool wasUsingController = false;
 
+    // ✅ EVENTOS CONVERTIDOS A NO-STATIC
+    [System.NonSerialized] public System.Action<bool> OnInputModeChanged;
+
     private void Awake()
     {
-        // Implementar Singleton
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+
+            if (showDebugLogs)
+                Debug.Log("🖱️ CursorManager Singleton inicializado");
         }
         else
         {
+            if (showDebugLogs)
+                Debug.Log("🖱️ CursorManager duplicado destruido");
             Destroy(gameObject);
             return;
         }
@@ -37,7 +44,6 @@ public class CursorManager : MonoBehaviour
 
     private void Start()
     {
-        // Configuración inicial del cursor
         ActualizarCursor();
 
         if (showDebugLogs)
@@ -48,10 +54,10 @@ public class CursorManager : MonoBehaviour
     {
         DetectarTipoDeInput();
 
-        // Solo actualizar si cambió el estado
         if (wasUsingController != isUsingController)
         {
             ActualizarCursor();
+            OnInputModeChanged?.Invoke(isUsingController);
             wasUsingController = isUsingController;
         }
     }
@@ -154,7 +160,6 @@ public class CursorManager : MonoBehaviour
     {
         if (isUsingController)
         {
-            // Ocultar cursor cuando se usa controlador
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
 
@@ -163,7 +168,6 @@ public class CursorManager : MonoBehaviour
         }
         else
         {
-            // Mostrar cursor cuando se usa mouse/teclado
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
 
@@ -172,11 +176,11 @@ public class CursorManager : MonoBehaviour
         }
     }
 
-    // Métodos públicos para control manual
     public void ForzarModoMouse()
     {
         isUsingController = false;
         ActualizarCursor();
+        OnInputModeChanged?.Invoke(isUsingController);
         if (showDebugLogs)
             Debug.Log("🖱️ Modo mouse FORZADO");
     }
@@ -185,6 +189,7 @@ public class CursorManager : MonoBehaviour
     {
         isUsingController = true;
         ActualizarCursor();
+        OnInputModeChanged?.Invoke(isUsingController);
         if (showDebugLogs)
             Debug.Log("🎮 Modo controlador FORZADO");
     }
@@ -192,5 +197,10 @@ public class CursorManager : MonoBehaviour
     public bool EstaUsandoControlador()
     {
         return isUsingController;
+    }
+
+    public string GetCursorInfo()
+    {
+        return $"CursorManager | Modo: {(isUsingController ? "🎮 Controlador" : "🖱️ Mouse")} | Cursor: {(Cursor.visible ? "Visible" : "Oculto")}";
     }
 }

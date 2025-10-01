@@ -428,7 +428,18 @@ public class PlayerHealth : MonoBehaviour
 
     void Die()
     {
-        Debug.Log("💀 Jugador ha muerto");
-        // reiniciar nivel, mostrar pantalla de muerte, etc.
+        if (showDebugLogs)
+            Debug.Log("💀 Jugador ha muerto - Iniciando respawn");
+
+        // Usar el SaveSystem para respawn
+        if (SaveSystem.Instance != null)
+        {
+            SaveSystem.Instance.RespawnPlayer();
+        }
+        else
+        {
+            Debug.LogError("❌ SaveSystem no encontrado para respawn");
+        }
     }
+
 }

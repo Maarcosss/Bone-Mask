@@ -45,7 +45,6 @@ public class HUD : MonoBehaviour
 
         if (enabled)
         {
-            // Actualización inicial
             UpdateSoulDisplay();
             UpdateCoinDisplay();
         }
@@ -84,19 +83,24 @@ public class HUD : MonoBehaviour
 
     void SubscribeToEvents()
     {
-        // Suscribirse a eventos del sistema de monedas
-        CurrencySystem.OnCoinsChanged += OnCoinsChanged;
+        // ✅ SUSCRIBIRSE A EVENTOS NO-STATIC
+        if (CurrencySystem.Instance != null)
+        {
+            CurrencySystem.Instance.OnCoinsChanged += OnCoinsChanged;
+        }
     }
 
     void OnDestroy()
     {
-        // Desuscribirse de eventos
-        CurrencySystem.OnCoinsChanged -= OnCoinsChanged;
+        // ✅ DESUSCRIBIRSE DE EVENTOS NO-STATIC
+        if (CurrencySystem.Instance != null)
+        {
+            CurrencySystem.Instance.OnCoinsChanged -= OnCoinsChanged;
+        }
     }
 
     void Update()
     {
-        // Solo actualizar si hay cambios
         UpdateSoulDisplay();
         UpdateCoinDisplay();
     }
@@ -107,12 +111,10 @@ public class HUD : MonoBehaviour
 
         float currentSoul = playerHealthRef.GetCurrentSoul();
 
-        // Solo actualizar si el valor cambió
         if (Mathf.Approximately(currentSoul, lastSoulValue)) return;
 
         lastSoulValue = currentSoul;
 
-        // Formatear según la configuración
         if (soulDecimalPlaces == 0)
         {
             cachedSoulString = ((int)currentSoul).ToString();
@@ -134,14 +136,12 @@ public class HUD : MonoBehaviour
 
         int currentCoins = CurrencySystem.Instance.GetCurrentCoins();
 
-        // Solo actualizar si el valor cambió
         if (currentCoins == lastCoinValue) return;
 
         lastCoinValue = currentCoins;
         cachedCoinString = string.Format(coinFormat, currentCoins);
         coinText.text = cachedCoinString;
 
-        // Animar si está habilitado y no hay animación en progreso
         if (animateCoins && !coinAnimationInProgress)
         {
             StartCoroutine(AnimateCoinText());
@@ -159,7 +159,6 @@ public class HUD : MonoBehaviour
         Vector3 originalScale = coinText.transform.localScale;
         Vector3 targetScale = originalScale * coinAnimationScale;
 
-        // Escalar hacia arriba
         float elapsed = 0f;
         float halfDuration = coinAnimationDuration * 0.5f;
 
@@ -171,7 +170,6 @@ public class HUD : MonoBehaviour
             yield return null;
         }
 
-        // Escalar hacia abajo
         elapsed = 0f;
         while (elapsed < halfDuration)
         {
@@ -185,15 +183,12 @@ public class HUD : MonoBehaviour
         coinAnimationInProgress = false;
     }
 
-    // Callback para eventos del sistema de monedas
     void OnCoinsChanged(int newCoinAmount)
     {
-        // La actualización se hará en UpdateCoinDisplay()
         if (showDebugLogs)
             Debug.Log($"💰 Evento de monedas recibido: {newCoinAmount}");
     }
 
-    // Métodos públicos para forzar actualizaciones
     public void ForceUpdateSoul()
     {
         lastSoulValue = -1f;
@@ -212,7 +207,6 @@ public class HUD : MonoBehaviour
         ForceUpdateCoins();
     }
 
-    // Métodos públicos para obtener valores mostrados
     public string GetDisplayedSoulValue()
     {
         return cachedSoulString;
@@ -223,7 +217,6 @@ public class HUD : MonoBehaviour
         return cachedCoinString;
     }
 
-    // Método para configurar el formato de monedas dinámicamente
     public void SetCoinFormat(string newFormat)
     {
         coinFormat = newFormat;
@@ -233,7 +226,6 @@ public class HUD : MonoBehaviour
             Debug.Log($"💰 Formato de monedas cambiado a: '{newFormat}'");
     }
 
-    // Información del HUD para debugging
     public string GetHUDInfo()
     {
         string coinStatus = coinText != null ? "✅" : "❌";
@@ -243,7 +235,6 @@ public class HUD : MonoBehaviour
         return $"HUD | Soul: {soulStatus} | Coins: {coinStatus} | CurrencySystem: {currencySystemStatus} | Animation: {coinAnimationInProgress}";
     }
 
-    // Método para configurar referencias automáticamente
     [ContextMenu("Auto Setup References")]
     public void AutoSetupReferences()
     {

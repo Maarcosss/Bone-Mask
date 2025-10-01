@@ -38,27 +38,31 @@ public class CurrencySystem : MonoBehaviour
     // Variables privadas
     private int lastDisplayedCoins = 0;
     private AudioSource audioSource;
-    private Coroutine currentAnimation; // ✅ PARA CONTROLAR ANIMACIONES
-    private Vector3 originalScale;       // ✅ GUARDAR ESCALA ORIGINAL
+    private Coroutine currentAnimation;
+    private Vector3 originalScale; // ✅ SIN VALOR POR DEFECTO - SE TOMA DEL INSPECTOR
 
-    // Singleton para acceso global
+    // ✅ SINGLETON (único static permitido)
     public static CurrencySystem Instance { get; private set; }
 
-    // Eventos para notificar a otros sistemas
-    public static System.Action<int> OnCoinsChanged;
-    public static System.Action<int> OnCoinsAdded;
-    public static System.Action<int> OnCoinsSpent;
+    // ✅ EVENTOS CONVERTIDOS A NO-STATIC
+    [System.NonSerialized] public System.Action<int> OnCoinsChanged;
+    [System.NonSerialized] public System.Action<int> OnCoinsAdded;
+    [System.NonSerialized] public System.Action<int> OnCoinsSpent;
 
     void Awake()
     {
-        // Implementar Singleton
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+
+            if (showDebugLogs)
+                Debug.Log("💰 CurrencySystem Singleton inicializado");
         }
         else
         {
+            if (showDebugLogs)
+                Debug.Log("💰 CurrencySystem duplicado destruido");
             Destroy(gameObject);
             return;
         }
@@ -66,35 +70,105 @@ public class CurrencySystem : MonoBehaviour
 
     void Start()
     {
-        // Buscar referencias si no están asignadas
-        if (coinText == null)
-        {
-            coinText = GameObject.Find("CoinText")?.GetComponent<TMP_Text>();
-        }
+        Invoke(nameof(InitializeCurrencySystem), 0.1f);
+    }
 
-        // ✅ GUARDAR ESCALA ORIGINAL AL INICIO
+    void InitializeCurrencySystem()
+    {
+        FindCoinText();
+        SetupAudioSource();
+
+        // ✅ GUARDAR LA ESCALA ORIGINAL DEL INSPECTOR (SIN MODIFICAR)
         if (coinText != null)
         {
             originalScale = coinText.transform.localScale;
             if (showDebugLogs)
-                Debug.Log($"💰 Escala original del texto guardada: {originalScale}");
+                Debug.Log($"💰 Escala original del Inspector guardada: {originalScale}");
         }
 
-        // Obtener AudioSource
+        LoadCoins();
+        UpdateCoinUI();
+
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+
+        if (showDebugLogs)
+            Debug.Log($"💰 CurrencySystem iniciado con {currentCoins} monedas");
+    }
+
+    void SetupAudioSource()
+    {
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
         {
             audioSource = gameObject.AddComponent<AudioSource>();
         }
+    }
 
-        // Cargar monedas guardadas
-        LoadCoins();
-
-        // Actualizar UI inicial
-        UpdateCoinUI();
-
+    void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
         if (showDebugLogs)
-            Debug.Log($"💰 CurrencySystem iniciado con {currentCoins} monedas");
+            Debug.Log($"📋 Escena cargada: {scene.name} - Rebuscar CoinText");
+
+        StartCoroutine(DelayedUISetup());
+    }
+
+    System.Collections.IEnumerator DelayedUISetup()
+    {
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForEndOfFrame();
+
+        FindCoinText();
+
+        // ✅ RESTAURAR ESCALA ORIGINAL SI ES NECESARIO
+        if (coinText != null && originalScale != Vector3.zero)
+        {
+            coinText.transform.localScale = originalScale;
+            if (showDebugLogs)
+                Debug.Log($"🔧 Escala restaurada después de cambio de escena: {originalScale}");
+        }
+
+        UpdateCoinUI();
+    }
+
+    void FindCoinText()
+    {
+        if (coinText == null)
+        {
+            coinText = GameObject.Find("CoinText")?.GetComponent<TMP_Text>();
+
+            if (coinText == null)
+            {
+                coinText = GameObject.Find("CoinTXT")?.GetComponent<TMP_Text>();
+            }
+
+            if (coinText == null)
+            {
+                Canvas canvas = FindObjectOfType<Canvas>();
+                if (canvas != null)
+                {
+                    TMP_Text[] allTexts = canvas.GetComponentsInChildren<TMP_Text>();
+                    foreach (TMP_Text text in allTexts)
+                    {
+                        if (text.name.ToLower().Contains("coin"))
+                        {
+                            coinText = text;
+                            break;
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (currentAnimation != null)
+        {
+            StopCoroutine(currentAnimation);
+        }
+
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     public void AddCoins(int amount)
@@ -111,7 +185,6 @@ public class CurrencySystem : MonoBehaviour
             PlayCoinSound();
             SaveCoins();
 
-            // Disparar eventos
             OnCoinsChanged?.Invoke(currentCoins);
             OnCoinsAdded?.Invoke(actualAdded);
 
@@ -133,7 +206,6 @@ public class CurrencySystem : MonoBehaviour
         UpdateCoinUI();
         SaveCoins();
 
-        // Disparar eventos
         OnCoinsChanged?.Invoke(currentCoins);
         OnCoinsSpent?.Invoke(amount);
 
@@ -166,76 +238,77 @@ public class CurrencySystem : MonoBehaviour
 
     void UpdateCoinUI()
     {
-        if (coinText == null) return;
+        if (coinText == null)
+        {
+            FindCoinText();
+            if (coinText == null) return;
+        }
 
         coinText.text = string.Format(coinFormat, currentCoins);
 
-        // ✅ ANIMACIÓN MEJORADA CON CONTROL
         if (enableScaleAnimation && currentCoins != lastDisplayedCoins)
         {
-            // ✅ DETENER ANIMACIÓN ANTERIOR SI EXISTE
             if (currentAnimation != null)
             {
                 StopCoroutine(currentAnimation);
-                // ✅ RESTAURAR ESCALA INMEDIATAMENTE
                 coinText.transform.localScale = originalScale;
             }
 
-            // ✅ INICIAR NUEVA ANIMACIÓN
             currentAnimation = StartCoroutine(AnimateCoinText());
             lastDisplayedCoins = currentCoins;
         }
     }
 
-    // ✅ ANIMACIÓN MEJORADA Y CONTROLADA
     System.Collections.IEnumerator AnimateCoinText()
     {
-        if (coinText == null) yield break;
+        if (coinText == null || originalScale == Vector3.zero) yield break;
 
         Vector3 targetScale = originalScale * animationScale;
 
         if (showDebugLogs)
             Debug.Log($"🎬 Iniciando animación: {originalScale} → {targetScale} → {originalScale}");
 
-        // ✅ FASE 1: Escalar hacia arriba
         float elapsed = 0f;
         float halfDuration = animationDuration * 0.5f;
 
+        // Escalar hacia arriba
         while (elapsed < halfDuration)
         {
+            if (coinText == null) yield break;
+
             elapsed += Time.deltaTime;
             float t = elapsed / halfDuration;
-
-            // ✅ USAR CURVA SUAVE
             t = Mathf.SmoothStep(0f, 1f, t);
 
             coinText.transform.localScale = Vector3.Lerp(originalScale, targetScale, t);
             yield return null;
         }
 
-        // ✅ ASEGURAR QUE LLEGUE AL TAMAÑO MÁXIMO
-        coinText.transform.localScale = targetScale;
+        if (coinText != null)
+            coinText.transform.localScale = targetScale;
 
-        // ✅ FASE 2: Escalar hacia abajo
+        // Escalar hacia abajo
         elapsed = 0f;
         while (elapsed < halfDuration)
         {
+            if (coinText == null) yield break;
+
             elapsed += Time.deltaTime;
             float t = elapsed / halfDuration;
-
-            // ✅ USAR CURVA SUAVE
             t = Mathf.SmoothStep(0f, 1f, t);
 
             coinText.transform.localScale = Vector3.Lerp(targetScale, originalScale, t);
             yield return null;
         }
 
-        // ✅ GARANTIZAR ESCALA ORIGINAL AL FINAL
-        coinText.transform.localScale = originalScale;
-        currentAnimation = null;
+        if (coinText != null)
+        {
+            coinText.transform.localScale = originalScale;
+            if (showDebugLogs)
+                Debug.Log($"🎬 Animación completada. Escala final: {coinText.transform.localScale}");
+        }
 
-        if (showDebugLogs)
-            Debug.Log($"🎬 Animación completada. Escala final: {coinText.transform.localScale}");
+        currentAnimation = null;
     }
 
     void PlayCoinSound()
@@ -258,7 +331,6 @@ public class CurrencySystem : MonoBehaviour
         currentCoins = Mathf.Clamp(currentCoins, 0, maxCoins);
     }
 
-    // ✅ MÉTODO PARA RESETEAR ESCALA MANUALMENTE
     public void ResetTextScale()
     {
         if (coinText != null && originalScale != Vector3.zero)
@@ -276,7 +348,6 @@ public class CurrencySystem : MonoBehaviour
         }
     }
 
-    // ✅ MÉTODO PARA DESACTIVAR ANIMACIÓN
     public void SetAnimationEnabled(bool enabled)
     {
         enableScaleAnimation = enabled;
@@ -284,25 +355,13 @@ public class CurrencySystem : MonoBehaviour
         if (!enabled && currentAnimation != null)
         {
             StopCoroutine(currentAnimation);
-            coinText.transform.localScale = originalScale;
+            if (coinText != null && originalScale != Vector3.zero)
+                coinText.transform.localScale = originalScale;
             currentAnimation = null;
         }
 
         if (showDebugLogs)
             Debug.Log($"🎬 Animación de escala: {(enabled ? "ACTIVADA" : "DESACTIVADA")}");
-    }
-
-    // Métodos públicos para debugging
-    [System.Obsolete("Solo para testing - Usar AddCoins() en producción")]
-    public void AddCoins_Debug(int amount)
-    {
-        AddCoins(amount);
-    }
-
-    [System.Obsolete("Solo para testing - Usar SpendCoins() en producción")]
-    public void SpendCoins_Debug(int amount)
-    {
-        SpendCoins(amount);
     }
 
     public void ResetCoins()
@@ -312,18 +371,24 @@ public class CurrencySystem : MonoBehaviour
             Debug.Log("🗑️ Monedas reseteadas a 0");
     }
 
-    // Información del sistema para debugging
-    public string GetSystemInfo()
+    [ContextMenu("Force Reset UI")]
+    public void ForceResetUI()
     {
-        return $"Monedas: {currentCoins}/{maxCoins} | UI: {(coinText != null ? "✅" : "❌")} | Audio: {(audioSource != null ? "✅" : "❌")} | Animación: {(enableScaleAnimation ? "✅" : "❌")}";
+        coinText = null;
+        FindCoinText();
+
+        if (coinText != null)
+        {
+            originalScale = coinText.transform.localScale;
+            UpdateCoinUI();
+
+            if (showDebugLogs)
+                Debug.Log($"🔧 UI forzada a resetear. Nueva escala: {originalScale}");
+        }
     }
 
-    // ✅ CLEANUP AL DESTRUIR
-    void OnDestroy()
+    public string GetSystemInfo()
     {
-        if (currentAnimation != null)
-        {
-            StopCoroutine(currentAnimation);
-        }
+        return $"Monedas: {currentCoins}/{maxCoins} | UI: {(coinText != null ? "✅" : "❌")} | Audio: {(audioSource != null ? "✅" : "❌")} | Animación: {(enableScaleAnimation ? "✅" : "❌")} | Escala: {originalScale}";
     }
 }
