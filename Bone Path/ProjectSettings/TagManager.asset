@@ -4,9 +4,9 @@
 TagManager:
   serializedVersion: 2
   tags:
+  - Enemy
   - Suelo
   - Checkpoint
-  - Enemy
   layers:
   - Default
   - TransparentFX

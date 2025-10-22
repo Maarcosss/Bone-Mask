@@ -2,31 +2,26 @@ Fix:
  · Tutorial HUD
  · TXT audios entre escenas
  · Ocultar cursor pausa ESC
- · Collider texto ajustar
  · Full Screen, resolutions y brillo
  · ESC cuando hay dialogo
- · DropDown interactuable mando
+ · DropDown interactuadle mando
  · Cambiar controles mando
- · Debugs Logs and logserros
- · NPC no funca na
  · Knockback enemy
+ · Save system
+ · Configurar sentido botones mando
+ · Ocultar ratón cuando usas teclado
 Do:
  · Animación/Transición de escena a escena
  · Audio valores
  · HUD mapa
  · HUD texto ubicaciones y boses
  · Poner autorías scripts
- · Poner textos mismos tamaños, títulos, subtítulos… Y CENTRADO
- · Créditos iniciales inicio juego
  · Oclusión culing
  · Animación corazon curarse y daño
- · Lanza que se clava
+ · Dash
  · Atajos resolución emergency
  · Aplicar cambios entre escenas, graficos, resolución, audio, controles...
- · Nueva estética main menú
- · Márgenes seguros textos y medidas separaciones iguales
- · Ocultar first selection si esta usando teclado
- · Ocultar ratón siempre mientras juego
+ · Sistema muerte fuera de mapa
 
 Probar:
  · Salto igualitario en PCs
@@ -36,3 +31,8 @@ Probar:
  · Mirar hacia arriba y hacia abajo
  · Mecanica de Ataque
  · Sistema de guardado
+
+Scripts Faltan Cambaidos: (innceseario, optimizar, cambio manual, comentarios, inglés)
+
+ · Checkpoint
+ · SaveSystem
