@@ -29,21 +29,6 @@ public class Menu_Manager : MonoBehaviour
     public Button firstSelectedController;
     public Button firstSelectedQuitGame;
 
-    [Header("Graphics Settings")]
-    [SerializeField] private Slider brightnessSlider = null;
-    [SerializeField] private TMP_Text brightnessTextValue = null;
-    [SerializeField] private float defaultBrightness = 1f;
-
-    [Header("Brightness Preview")]
-    [SerializeField] private Image brightnessPreviewImage = null;
-
-    [Header("Brightness Render")]
-    [SerializeField] private BrightnessManager brightnessManager = null;
-
-    [Header("Resolution Settings")]
-    public TMP_Dropdown resDropdown;
-    public Toggle FullScreenToggle;
-
     Resolution[] allResolutions;
 
     [Header("Input Settings")]
@@ -53,12 +38,7 @@ public class Menu_Manager : MonoBehaviour
 
     private EventSystem eventSystem;
 
-    private int selectedResolution;
-    private bool isFullScreen;
-    private float brightnessLevel;
     private bool isUsingController = false;
-
-    List<Resolution> selectedResolutionList = new List<Resolution>();
 
     //Button memory system per panel
     private Dictionary<GameObject, Selectable> lastSelectionPerPanel = new Dictionary<GameObject, Selectable>();
@@ -70,39 +50,11 @@ public class Menu_Manager : MonoBehaviour
 
     private string url = "https://www.youtube.com/channel/UCd3P90PkgE53ogQkl72LNvQ";
 
-    public Player playerRef;
-
     private void Start()
     {
-        playerRef.LoadData();
-
         eventSystem = EventSystem.current;
-
-        isFullScreen = true;
-        allResolutions = Screen.resolutions;
-
-        List<string> resolutionsStringList = new List<string>();
-        string newRes;
-        foreach (Resolution res in allResolutions)
-        {
-            newRes = res.width.ToString() + " x " + res.height.ToString();
-            if(!resolutionsStringList.Contains(newRes))
-            {
-                resolutionsStringList.Add(newRes);
-                selectedResolutionList.Add(res);
-            }
-        }
-        resDropdown.AddOptions(resolutionsStringList);
-
         ConfigureInputSystem();
-
-        float savedBrightness = PlayerPrefs.GetFloat("masterBrightness", defaultBrightness);
-        brightnessSlider.value = savedBrightness;
-        SetBrightness(savedBrightness);
-
         SetFirstSelection(firstSelectedMainMenu);
-
-        ShowCursorAccordingToInput();
     }
 
     //Save UI selection
@@ -308,7 +260,7 @@ public class Menu_Manager : MonoBehaviour
             {
                 isUsingController = false;
             }
-            ShowCursorAccordingToInput();
+            
         }
     }
 
@@ -323,7 +275,7 @@ public class Menu_Manager : MonoBehaviour
         {
             isUsingController = false;
         }
-        ShowCursorAccordingToInput();
+
     }
 
     //Detection of back button between menus
@@ -332,13 +284,13 @@ public class Menu_Manager : MonoBehaviour
         if (context.control.device is Gamepad)
         {
             isUsingController = true;
-            ShowCursorAccordingToInput();
+            
             ManageCancellation();
         }
         else
         {
             isUsingController = false;
-            ShowCursorAccordingToInput();
+            
         }
     }
 
@@ -381,19 +333,19 @@ public class Menu_Manager : MonoBehaviour
         if (Mouse.current != null && Mouse.current.delta.ReadValue().magnitude > 0.1f)
         {
             isUsingController = false;
-            ShowCursorAccordingToInput();
+            
         }
 
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
             isUsingController = false;
-            ShowCursorAccordingToInput();
+            
         }
 
         if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
         {
             isUsingController = false;
-            ShowCursorAccordingToInput();
+            
         }
 
         if (Gamepad.current != null)
@@ -401,14 +353,14 @@ public class Menu_Manager : MonoBehaviour
             if (Gamepad.current.leftStick.ReadValue().magnitude > 0.1f || Gamepad.current.rightStick.ReadValue().magnitude > 0.1f)
             {
                 isUsingController = true;
-                ShowCursorAccordingToInput();
+                
             }
 
             Vector2 dpad = Gamepad.current.dpad.ReadValue();
             if (dpad.magnitude > 0.1f)
             {
                 isUsingController = true;
-                ShowCursorAccordingToInput();
+                
             }
 
             if (Gamepad.current.buttonSouth.wasPressedThisFrame ||
@@ -417,88 +369,9 @@ public class Menu_Manager : MonoBehaviour
                 Gamepad.current.buttonNorth.wasPressedThisFrame)
             {
                 isUsingController = true;
-                ShowCursorAccordingToInput();
+                
             }
         }
-    }
-
-    //Display cursor according to input
-    void ShowCursorAccordingToInput()
-    {
-        if ((mainMenuPanel != null && mainMenuPanel.activeInHierarchy) || insideSubmenu)
-        {
-            if (isUsingController)
-            {
-                Cursor.visible = false;
-                Cursor.lockState = CursorLockMode.Locked;
-            }
-            else
-            {
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.None;
-            }
-        }
-        else
-        {
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
-        }
-    }
-
-    //Apply Brightness
-    public void SetBrightness(float brightness)
-    {
-        brightnessLevel = brightness;
-        if (brightnessTextValue != null)
-        {
-            brightnessTextValue.text = brightness.ToString("0.0");
-        }
-
-        if (brightnessPreviewImage != null)
-        {
-            Color c = brightnessPreviewImage.color;
-            c.r = brightness;
-            c.g = brightness;
-            c.b = brightness;
-            c.a = 1f;
-            brightnessPreviewImage.color = c;
-        }
-
-        if (brightnessManager != null)
-        {
-            brightnessManager.SetBrightness(brightness);
-        }
-    }
-
-    //Reset default values
-    public void ResetBrightness()
-    {
-        brightnessSlider.value = defaultBrightness;
-        SetBrightness(defaultBrightness);
-    }
-
-    //Change resolutions
-    public void ChangeResolutions()
-    {
-        selectedResolution = resDropdown.value;
-        Screen.SetResolution(selectedResolutionList[selectedResolution].width, selectedResolutionList[selectedResolution].height, isFullScreen);
-    }
-
-    //Change full screen
-    public void ChangeFullScreen()
-    {
-
-        isFullScreen = FullScreenToggle.isOn;
-        Screen.SetResolution(selectedResolutionList[selectedResolution].width, selectedResolutionList[selectedResolution].height, isFullScreen);
-
-    }
-
-    //Apply graphics
-    public void GraphicsApply()
-    {
-        PlayerPrefs.SetFloat("masterBrightness", brightnessLevel);
-
-        PlayerPrefs.Save();
     }
 
     //Start the game
@@ -567,7 +440,6 @@ public class Menu_Manager : MonoBehaviour
     //Accept brightness settings
     public void AcceptBrightnessSettings()
     {
-        GraphicsApply();
 
         if (brightnessGameOptionsPanel != null)
         {

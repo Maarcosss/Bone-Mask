@@ -7,18 +7,17 @@ using UnityEngine.InputSystem;
 
 public class ManagerOptions : MonoBehaviour
 {
-    [Header("Player References")]
-    public Player playerRef;
-
     [Header("UI Panels")]
     public GameObject pausePanel;
     public GameObject optionsPanel;
     public GameObject quitPanel;
+    public GameObject quitGamePanel;
 
     [Header("First Selection Buttons")]
     public Button firstPauseButton;
     public Button firstOptionsButton;
     public Button firstQuitButton;
+    public Button firstQuitGameButton;
 
     [Header("Input Settings")]
     public InputActionAsset inputActions;
@@ -33,20 +32,30 @@ public class ManagerOptions : MonoBehaviour
     private bool isUsingController = false;
     private EventSystem eventSystem;
 
+    public Player playerRef;
+
     void Start()
     {
+        playerRef.LoadData();
         eventSystem = EventSystem.current;
 
         ConfigureInputSystem();
 
-        optionsPanel.SetActive(false);
-        quitPanel.SetActive(false);
+        if (optionsPanel != null) optionsPanel.SetActive(false);
+        if (quitPanel != null) quitPanel.SetActive(false);
 
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
     }
 
-    //Read player inputs
+    void OnEnable()
+    {
+        EnableActions();
+    }
+
+    void OnDisable()
+    {
+        DisableActions();
+    }
+
     void ConfigureInputSystem()
     {
         if (inputActions == null)
@@ -88,18 +97,15 @@ public class ManagerOptions : MonoBehaviour
         }
 
         ConfigureCallbacks();
-        EnableActions();
     }
 
-    //Connection Inputs to logic menu
     void ConfigureCallbacks()
     {
-        navigateAction.performed += OnNavigate;
-        submitAction.performed += OnSubmit;
-        cancelAction.performed += OnCancel;
+        if (navigateAction != null) navigateAction.performed += OnNavigate;
+        if (submitAction != null) submitAction.performed += OnSubmit;
+        if (cancelAction != null) cancelAction.performed += OnCancel;
     }
 
-    //Enables Input System actions
     void EnableActions()
     {
         navigateAction?.Enable();
@@ -107,73 +113,57 @@ public class ManagerOptions : MonoBehaviour
         cancelAction?.Enable();
     }
 
-    //Disables Input System actions
     void DisableActions()
     {
+        if (navigateAction != null) navigateAction.performed -= OnNavigate;
+        if (submitAction != null) submitAction.performed -= OnSubmit;
+        if (cancelAction != null) cancelAction.performed -= OnCancel;
+
         navigateAction?.Disable();
         submitAction?.Disable();
         cancelAction?.Disable();
     }
 
-    //Detection of navigation between menus
     void OnNavigate(InputAction.CallbackContext context)
     {
         Vector2 input = context.ReadValue<Vector2>();
-        if (input.magnitude > 0.1f)
-        {
-            isUsingController = true;
-            ShowCursorBasedOnInput();
-        }
+        if (input.magnitude > 0.1f) isUsingController = true;
     }
 
-    //Selection confirmation detection
     void OnSubmit(InputAction.CallbackContext context)
     {
-        if (context.control.device is Gamepad)
-        {
-            isUsingController = true;
-            ShowCursorBasedOnInput();
-        }
+        if (context.control.device is Gamepad) isUsingController = true;
     }
 
-    //Detection of back button between menus
     void OnCancel(InputAction.CallbackContext context)
     {
-        if (context.control.device is Gamepad)
+        if (context.control.device is Gamepad || context.control.device is Keyboard)
         {
             isUsingController = true;
-            ShowCursorBasedOnInput();
             HandleCancel();
         }
     }
 
-    //Go back through the menus
     void HandleCancel()
     {
-        if (optionsPanel.activeInHierarchy)
+        if (optionsPanel != null && optionsPanel.activeInHierarchy)
         {
             BackOptionsPanel();
         }
-        else if (quitPanel.activeInHierarchy)
+        else if (quitPanel != null && quitPanel.activeInHierarchy)
         {
             NoQuitPanel();
         }
     }
 
-    //Last saved button UI
     void SaveCurrentButton()
     {
         if (eventSystem != null && eventSystem.currentSelectedGameObject != null)
         {
-            Button currentButton = eventSystem.currentSelectedGameObject.GetComponent<Button>();
-            if (currentButton != null)
-            {
-                lastSelectedButton = currentButton;
-            }
+            lastSelectedButton = eventSystem.currentSelectedGameObject.GetComponent<Button>();
         }
     }
 
-    //First selection menu command
     void SetFirstSelection(Button buttonToSelect, bool useMemory = false)
     {
         Button button = buttonToSelect;
@@ -190,64 +180,6 @@ public class ManagerOptions : MonoBehaviour
         }
     }
 
-    void Update()
-    {
-        if (Mouse.current != null && Mouse.current.delta.ReadValue().magnitude > 0.1f)
-        {
-            isUsingController = false;
-            ShowCursorBasedOnInput();
-        }
-
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            isUsingController = false;
-            ShowCursorBasedOnInput();
-        }
-
-        if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame)
-        {
-            isUsingController = false;
-            ShowCursorBasedOnInput();
-        }
-
-        if (Gamepad.current != null)
-        {
-            if (Gamepad.current.leftStick.ReadValue().magnitude > 0.1f || Gamepad.current.rightStick.ReadValue().magnitude > 0.1f)
-            {
-                isUsingController = true;
-                ShowCursorBasedOnInput();
-            }
-
-            if (Gamepad.current.buttonSouth.wasPressedThisFrame ||
-                Gamepad.current.buttonEast.wasPressedThisFrame ||
-                Gamepad.current.buttonWest.wasPressedThisFrame ||
-                Gamepad.current.buttonNorth.wasPressedThisFrame)
-            {
-                isUsingController = true;
-                ShowCursorBasedOnInput();
-            }
-        }
-    }
-
-    //Visibility and cursor blocking
-    void ShowCursorBasedOnInput()
-    {
-        if (pausePanel.activeInHierarchy || insideSubmenu)
-        {
-            if (isUsingController)
-            {
-                Cursor.visible = false;
-                Cursor.lockState = CursorLockMode.Locked;
-            }
-            else
-            {
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.None;
-            }
-        }
-    }
-
-    //Wait for menu frame
     IEnumerator SelectAfterFrame(GameObject objToSelect)
     {
         yield return null;
@@ -257,105 +189,123 @@ public class ManagerOptions : MonoBehaviour
         }
     }
 
-    //Pause game
+    // --- Menú principal y submenús ---
     public void Pause()
     {
-        pausePanel.SetActive(true);
+        if (pausePanel != null) pausePanel.SetActive(true);
         Time.timeScale = 0f;
 
-        if (isUsingController)
-        {
-            SetFirstSelection(firstPauseButton);
-        }
-
-        ShowCursorBasedOnInput();
+        if (isUsingController) SetFirstSelection(firstPauseButton);
     }
 
-    //Continue playing
     public void Continue()
     {
-        pausePanel.SetActive(false);
+        if (pausePanel != null) pausePanel.SetActive(false);
         Time.timeScale = 1f;
 
-        if (eventSystem != null)
-        {
-            eventSystem.SetSelectedGameObject(null);
-        }
-
+        if (eventSystem != null) eventSystem.SetSelectedGameObject(null);
         lastSelectedButton = null;
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
     }
 
-    //Options menu
     public void OptionsPause()
     {
         SaveCurrentButton();
-        pausePanel.SetActive(false);
-        optionsPanel.SetActive(true);
+        if (pausePanel != null) pausePanel.SetActive(false);
+        if (optionsPanel != null) optionsPanel.SetActive(true);
         insideSubmenu = true;
 
-        if (isUsingController)
-        {
-            SetFirstSelection(firstOptionsButton);
-        }
-
-        ShowCursorBasedOnInput();
+        if (isUsingController) SetFirstSelection(firstOptionsButton);
     }
 
-    //Back from options
     public void BackOptionsPanel()
     {
-        optionsPanel.SetActive(false);
-        pausePanel.SetActive(true);
+        if (optionsPanel != null) optionsPanel.SetActive(false);
+        if (pausePanel != null) pausePanel.SetActive(true);
         insideSubmenu = false;
 
-        if (isUsingController)
-        {
-            SetFirstSelection(firstPauseButton, true);
-        }
-
-        ShowCursorBasedOnInput();
+        if (isUsingController) SetFirstSelection(firstPauseButton, true);
     }
 
-    //Close the game
     public void QuitPause()
     {
         SaveCurrentButton();
-        pausePanel.SetActive(false);
-        quitPanel.SetActive(true);
+        if (pausePanel != null) pausePanel.SetActive(false);
+        if (quitPanel != null) quitPanel.SetActive(true);
         insideSubmenu = true;
 
-        if (isUsingController)
-        {
-            SetFirstSelection(firstQuitButton);
-        }
-
-        ShowCursorBasedOnInput();
+        if (isUsingController) SetFirstSelection(firstQuitButton);
     }
 
-    //If close game
     public void YesQuit()
     {
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.RefreshSlidersAndTexts();
-        }
+        if (AudioManager.Instance != null) AudioManager.Instance.RefreshSlidersAndTexts();
         SceneManager.LoadScene(0);
     }
 
-    //Do not close game
     public void NoQuitPanel()
     {
-        quitPanel.SetActive(false);
-        pausePanel.SetActive(true);
+        if (quitPanel != null) quitPanel.SetActive(false);
+        if (pausePanel != null) pausePanel.SetActive(true);
         insideSubmenu = false;
 
-        if (isUsingController)
+        if (isUsingController) SetFirstSelection(firstPauseButton, true);
+    }
+
+    public void QuitGame()
+    {
+
+        if (pausePanel != null)
         {
-            SetFirstSelection(firstPauseButton, true);
+            pausePanel.SetActive(false);
+        }
+        if (quitGamePanel != null)
+        {
+            quitGamePanel.SetActive(true);
         }
 
-        ShowCursorBasedOnInput();
+         if (isUsingController) SetFirstSelection(firstQuitGameButton);
+    }
+
+    public void YesQuitGame()
+    {
+        Debug.Log("Saliendo del juego");
+        Application.Quit();
+    }
+
+    public void NoQuitGame()
+    {
+        if (quitGamePanel != null)
+        {
+            quitGamePanel.SetActive(false);
+        }
+        if (pausePanel != null)
+        {
+            pausePanel.SetActive(true);
+        }
+
+        if (isUsingController) SetFirstSelection(firstQuitGameButton);
+    }
+
+    void Update()
+    {
+        // Detectar cambio de dispositivo
+        if (Mouse.current != null && (Mouse.current.delta.ReadValue().magnitude > 0.1f || Mouse.current.leftButton.wasPressedThisFrame))
+        {
+            isUsingController = false;
+        }
+
+        if (Keyboard.current != null && Keyboard.current.anyKey.wasPressedThisFrame) isUsingController = false;
+
+        if (Gamepad.current != null)
+        {
+            if (Gamepad.current.leftStick.ReadValue().magnitude > 0.1f || Gamepad.current.rightStick.ReadValue().magnitude > 0.1f)
+                isUsingController = true;
+
+            if (Gamepad.current.buttonSouth.wasPressedThisFrame ||
+                Gamepad.current.buttonEast.wasPressedThisFrame ||
+                Gamepad.current.buttonWest.wasPressedThisFrame ||
+                Gamepad.current.buttonNorth.wasPressedThisFrame)
+                isUsingController = true;
+        }
     }
 }

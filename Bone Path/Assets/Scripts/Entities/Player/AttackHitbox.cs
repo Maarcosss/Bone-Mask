@@ -58,25 +58,41 @@ public class AttackHitbox : MonoBehaviour
     {
         Vector3 attackPosition = transform.position + transform.TransformDirection(hitboxOffset);
         Collider[] hits = Physics.OverlapBox(attackPosition, hitboxSize * 0.5f, transform.rotation);
+
         foreach (Collider col in hits)
         {
-            Enemy enemy = col.GetComponent<Enemy>();
-            if (enemy != null && !enemy.isDead)
+            if (col.CompareTag("Enemy"))
             {
-                Vector3 hitDirection = (enemy.transform.position - attackPosition).normalized;
-                enemy.TakeDamage(damageAmount, hitDirection);
-
-                if (playerRef != null)
+                PassiveEnemyAI passiveEnemy = col.GetComponent<PassiveEnemyAI>();
+                if (passiveEnemy != null)
                 {
-                    playerRef.soul += soulPerHit;
-                    if (playerRef.soul > playerRef.maxSoul)
+                    passiveEnemy.TakeDamage(damageAmount);
+                    if (playerRef != null)
                     {
-                        playerRef.soul = playerRef.maxSoul;
+                        playerRef.soul += soulPerHit;
+                        if (playerRef.soul > playerRef.maxSoul)
+                        {
+                            playerRef.soul = playerRef.maxSoul;
+                        }
+                        playerRef.UpdateSoulUI();
                     }
-                    playerRef.UpdateSoulUI();
+                }
+
+                ActiveEnemyAI activeEnemy = col.GetComponent<ActiveEnemyAI>();
+                if (activeEnemy != null)
+                {
+                    activeEnemy.TakeDamage(damageAmount);
+                    if (playerRef != null)
+                    {
+                        playerRef.soul += soulPerHit;
+                        if (playerRef.soul > playerRef.maxSoul)
+                        {
+                            playerRef.soul = playerRef.maxSoul;
+                        }
+                        playerRef.UpdateSoulUI();
+                    }
                 }
             }
-
             BreakableObject breakable = col.GetComponent<BreakableObject>();
             if (breakable != null)
             {

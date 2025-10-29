@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 6437835059416787356}
   - component: {fileID: 7666643120451976078}
   - component: {fileID: 93642523971943901}
-  - component: {fileID: 6956238109165188384}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -134,23 +133,3 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 120
   m_CollisionDetection: 0
---- !u!114 &6956238109165188384
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3488020241470527906}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8c17a39a88a612b4d998e6fd473ff6e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  coinValue: 1
-  autoDestroy: 1
-  rotationSpeed: 90
-  restrictZMovement: 1
-  fixedZPosition: 0
-  minimumCollisionForce: 0.1
-  customPickupSound: {fileID: 0}
-  showDebugLogs: 0

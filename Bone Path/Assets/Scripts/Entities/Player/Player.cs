@@ -11,15 +11,20 @@ public class Player : MonoBehaviour
     [SerializeField] private Image heart3;
     [SerializeField] private Sprite fullHeart;
     [SerializeField] private Sprite emptyHeart;
-    public int health;
+    public int health = 3;
     public int maxHealth = 3;
-    public float soul;
+    public float soul = 0f;
     public float maxSoul = 100f;
     [Range(0.01f, 1f)][SerializeField] private float healCostPercent = 0.5f;
     [SerializeField] private float healTime = 1.0f;
 
+    [Header("Coin Settings")]
+    public int coins = 0;
+    private int maxCoins = 9999;
+    public TMP_Text coinText;
+
     [Header("UI")]
-    public TextMeshProUGUI soulText;
+    public TMP_Text soulText;
 
     private float healTimer = 0f;
 
@@ -38,20 +43,20 @@ public class Player : MonoBehaviour
     [Header("Input System")]
     public InputActionReference healAction;
     public InputActionReference interactAction;
+    public InputActionReference pauseAction;
 
     [Header("Damage Settings")]
     [SerializeField] private float damageCooldown = 1f;
     private float damageTimer = 0f;
 
     private bool isGrounded;
+    public ManagerOptions ManagerOptionsRef;
 
     void Start()
     {
         rigidBody = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
         rigidBody.freezeRotation = true;
-        health = maxHealth;
-        UpdateSoulUI();
     }
 
     void Update()
@@ -66,6 +71,7 @@ public class Player : MonoBehaviour
         HandleHealing();
         UpdateHeartsUI();
         UpdateSoulUI();
+        Pause();
     }
 
     private void FixedUpdate()
@@ -95,6 +101,14 @@ public class Player : MonoBehaviour
     {
         healAction?.action.Disable();
         interactAction?.action.Disable();
+    }
+
+    private void Pause()
+    {
+        if (pauseAction != null && pauseAction.action.ReadValue<float>() > 0.1f)
+        {
+            ManagerOptionsRef.Pause();
+        }
     }
 
     public void Move()
@@ -139,6 +153,16 @@ public class Player : MonoBehaviour
         UpdateSoulUI();
     }
 
+    public void AddCoin(int amount)
+    {
+        coins += amount;
+        if (coins > maxCoins)
+        {
+            coins = maxCoins;
+        }
+        UpdateCoinUI();
+    }
+
     private void UpdateHeartsUI()
     {
         heart1.sprite = health >= 1 ? fullHeart : emptyHeart;
@@ -154,6 +178,15 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void UpdateCoinUI()
+    {
+        if (coinText != null)
+        {
+            coinText.text = coins.ToString();
+        }
+
+    }
+
     private void OnTriggerStay(Collider other)
     {
         if (other.CompareTag("Checkpoint") && interactAction != null && interactAction.action.ReadValue<float>() > 0.1f)
@@ -164,6 +197,12 @@ public class Player : MonoBehaviour
 
     private void OnCollisionStay(Collision collision)
     {
+        if (collision.gameObject.CompareTag("Coin"))
+        {
+            AddCoin(1);
+            Destroy(collision.gameObject);
+        }
+
         if (collision.gameObject.CompareTag("Enemy") && damageTimer <= 0f)
         {
             health = Mathf.Max(health - 1, 0);
