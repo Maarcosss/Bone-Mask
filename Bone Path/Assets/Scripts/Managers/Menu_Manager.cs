@@ -7,6 +7,9 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
+
 public class Menu_Manager : MonoBehaviour
 {
     [Header("UI Panels")]
@@ -14,7 +17,6 @@ public class Menu_Manager : MonoBehaviour
     public GameObject optionsMainMenuPanel;
     public GameObject extrasPanel;
     public GameObject gameOptionsPanel;
-    public GameObject brightnessGameOptionsPanel;
     public GameObject audioPanel;
     public GameObject controllerPanel;
     public GameObject quitGamePanel;
@@ -62,10 +64,10 @@ public class Menu_Manager : MonoBehaviour
     {
         if (eventSystem != null && eventSystem.currentSelectedGameObject != null && sourcePanel != null)
         {
-            Selectable seleccionActual = eventSystem.currentSelectedGameObject.GetComponent<Selectable>();
-            if (seleccionActual != null)
+            Selectable currentSelection = eventSystem.currentSelectedGameObject.GetComponent<Selectable>();
+            if (currentSelection != null)
             {
-                lastSelectionPerPanel[sourcePanel] = seleccionActual;
+                lastSelectionPerPanel[sourcePanel] = currentSelection;
             }
         }
     }
@@ -104,14 +106,14 @@ public class Menu_Manager : MonoBehaviour
     }
 
     //Wait for menu frame
-    IEnumerator SelectAfterFrame(GameObject objetoASeleccionar)
+    IEnumerator SelectAfterFrame(GameObject objectToSelect)
     {
         yield return null;
 
-        if (eventSystem != null && objetoASeleccionar != null)
+        if (eventSystem != null && objectToSelect != null)
         {
             eventSystem.SetSelectedGameObject(null);
-            eventSystem.SetSelectedGameObject(objetoASeleccionar);
+            eventSystem.SetSelectedGameObject(objectToSelect);
         }
     }
 
@@ -150,10 +152,6 @@ public class Menu_Manager : MonoBehaviour
         if (gameOptionsPanel != null && gameOptionsPanel.activeInHierarchy)
         {
             return gameOptionsPanel;
-        }
-        if (brightnessGameOptionsPanel != null && brightnessGameOptionsPanel.activeInHierarchy)
-        {
-            return brightnessGameOptionsPanel;
         }
         if (audioPanel != null && audioPanel.activeInHierarchy)
         {
@@ -305,10 +303,6 @@ public class Menu_Manager : MonoBehaviour
         {
             BackGameSettings();
         }
-        else if (brightnessGameOptionsPanel != null && brightnessGameOptionsPanel.activeInHierarchy)
-        {
-            AcceptBrightnessSettings();
-        }
         else if (audioPanel != null && audioPanel.activeInHierarchy)
         {
             BackAudioSettings();
@@ -418,39 +412,6 @@ public class Menu_Manager : MonoBehaviour
         }
 
         SetFirstSelection(firstSelectedGameOptions);
-    }
-
-    //Brightness settings
-    public void BrightnessGameOptions()
-    {
-        SaveSelected(gameOptionsPanel);
-
-        if (gameOptionsPanel != null)
-        {
-            gameOptionsPanel.SetActive(false);
-        }
-        if (brightnessGameOptionsPanel != null)
-        {
-            brightnessGameOptionsPanel.SetActive(true);
-        }
-
-        SetFirstSelection(firstSelectedBrightness);
-    }
-
-    //Accept brightness settings
-    public void AcceptBrightnessSettings()
-    {
-
-        if (brightnessGameOptionsPanel != null)
-        {
-            brightnessGameOptionsPanel.SetActive(false);
-        }
-        if (gameOptionsPanel != null)
-        {
-            gameOptionsPanel.SetActive(true);
-        }
-
-        SetFirstSelection(firstSelectedGameOptions, gameOptionsPanel, useMemory: true);
     }
 
     //Return from brightness settings

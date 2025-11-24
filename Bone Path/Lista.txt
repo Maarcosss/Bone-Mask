@@ -1,0 +1,47 @@
+Checkpoints repartidos.
+Fade on escenas y partes del mapa
+cofre
+pinchos
+
+Lucas:
+Lianas
+Hojas cayendo
+Noche y luna
+Transición dia a noche
+enemigos de noche
+paredes rompibles
+zarzas
+mono (lanzador)
+pajaro inofensivo
+rata/topos
+Mega topo BOSS
+templo/sitio de rezo bruga
+Escarabajo/bichos
+Pajaro BOSS
+rio de janeiro
+
+
+Alejandro:
+Agua
+Eco
+Goteras
+rana de cueva
+pedrusco de mineral (cuarzo saltable)
+enemigo lanzador cueva
+arañas
+murciélagos
+hongos luminescentes
+bichos luminiscentes
+zonas venenosas
+geodas
+sepia camuflada
+ajolote gigante NO MATABLE
+Buho wacharo
+arña latigo BOSS
+
+Easetr eggs:
+Vaca
+labubu coleccionable
+Alejandro trabaja NPC
+Diablos NPC
+Pared rompible 100HP

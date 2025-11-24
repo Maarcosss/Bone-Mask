@@ -22,6 +22,13 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-de
+    - Preload
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 838efd4734877734494ba7171a1bd045
+    m_Address: Dialogues Table_de
+    m_ReadOnly: 1
+    m_SerializedLabels:
+    - Locale-de
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 1
   m_Settings: {fileID: 11400000, guid: 31d097dfd8c87cd4bbc9e2296fe73046, type: 2}

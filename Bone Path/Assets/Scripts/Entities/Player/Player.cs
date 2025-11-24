@@ -3,13 +3,16 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using TMPro;
 
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
+
 public class Player : MonoBehaviour
 {
     [Header("Health Settings")]
     [SerializeField] private Image heart1;
     [SerializeField] private Image heart2;
     [SerializeField] private Image heart3;
-    [SerializeField] private Sprite fullHeart;
+    [SerializeField] private Sprite fullHeart;  
     [SerializeField] private Sprite emptyHeart;
     public int health = 3;
     public int maxHealth = 3;
@@ -20,7 +23,6 @@ public class Player : MonoBehaviour
 
     [Header("Coin Settings")]
     public int coins = 0;
-    private int maxCoins = 9999;
     public TMP_Text coinText;
 
     [Header("UI")]
@@ -70,10 +72,12 @@ public class Player : MonoBehaviour
         Move();
         HandleHealing();
         UpdateHeartsUI();
+        UpdateCoinUI();
         UpdateSoulUI();
         Pause();
     }
 
+    //Handles physics updates each fixed frame
     private void FixedUpdate()
     {
         float control = isGrounded ? 1f : airControlMultiplier;
@@ -103,6 +107,7 @@ public class Player : MonoBehaviour
         interactAction?.action.Disable();
     }
 
+    //Reads player movement input
     private void Pause()
     {
         if (pauseAction != null && pauseAction.action.ReadValue<float>() > 0.1f)
@@ -111,11 +116,25 @@ public class Player : MonoBehaviour
         }
     }
 
+    //Handles player jump
     public void Move()
     {
         input = playerInput.actions["Move"].ReadValue<Vector2>();
     }
 
+    //  Sets the speed to the given value
+    public void SetSpeed(float newSpeed)
+    {
+        speed = newSpeed;
+    }
+
+    //Returns the current player speed
+    public float GetSpeed()
+    {
+        return speed;
+    }
+
+    //Handles healing input and timing
     public void Jump(InputAction.CallbackContext callbackContext)
     {
         if (callbackContext.performed && isGrounded)
@@ -125,6 +144,7 @@ public class Player : MonoBehaviour
         }
     }
 
+    //Applies healing to player
     private void HandleHealing()
     {
         float requiredSoul = maxSoul * healCostPercent;
@@ -145,6 +165,7 @@ public class Player : MonoBehaviour
         }
     }
 
+    //Updates heart UI based on current health
     private void HealPlayer()
     {
         health = Mathf.Min(health + 1, maxHealth);
@@ -153,16 +174,7 @@ public class Player : MonoBehaviour
         UpdateSoulUI();
     }
 
-    public void AddCoin(int amount)
-    {
-        coins += amount;
-        if (coins > maxCoins)
-        {
-            coins = maxCoins;
-        }
-        UpdateCoinUI();
-    }
-
+    //Updates soul UI
     private void UpdateHeartsUI()
     {
         heart1.sprite = health >= 1 ? fullHeart : emptyHeart;
@@ -170,6 +182,7 @@ public class Player : MonoBehaviour
         heart3.sprite = health >= 3 ? fullHeart : emptyHeart;
     }
 
+    //Updates coin UI
     public void UpdateSoulUI()
     {
         if (soulText != null)
@@ -178,13 +191,13 @@ public class Player : MonoBehaviour
         }
     }
 
+    //Handles checkpoint interaction
     private void UpdateCoinUI()
     {
         if (coinText != null)
         {
             coinText.text = coins.ToString();
         }
-
     }
 
     private void OnTriggerStay(Collider other)
@@ -199,8 +212,9 @@ public class Player : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Coin"))
         {
-            AddCoin(1);
             Destroy(collision.gameObject);
+            coins++;
+            UpdateCoinUI();
         }
 
         if (collision.gameObject.CompareTag("Enemy") && damageTimer <= 0f)
@@ -211,17 +225,20 @@ public class Player : MonoBehaviour
         }
     }
 
+    //Saves player data
     public void SaveData()
     {
         SaveManager.SavePlayerData(this);
         Debug.Log("DATOS GUARDADOS");
     }
 
+    //Loads player data
     public void LoadData()
     {
         PlayerData playerData = SaveManager.LoadPlayerData();
         soul = playerData.soul;
         health = playerData.health;
+        coins = playerData.coins;
         transform.position = new Vector3(playerData.position[0], playerData.position[1], playerData.position[2]);
         UpdateSoulUI();
         UpdateHeartsUI();

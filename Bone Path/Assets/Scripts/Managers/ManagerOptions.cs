@@ -4,6 +4,10 @@ using UnityEngine.SceneManagement;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using Unity.VisualScripting;
+
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
 
 public class ManagerOptions : MonoBehaviour
 {
@@ -189,7 +193,6 @@ public class ManagerOptions : MonoBehaviour
         }
     }
 
-    // --- Menú principal y submenús ---
     public void Pause()
     {
         if (pausePanel != null) pausePanel.SetActive(true);
@@ -200,6 +203,8 @@ public class ManagerOptions : MonoBehaviour
 
     public void Continue()
     {
+        Debug.Log("Se ha pulsado Continue");
+
         if (pausePanel != null) pausePanel.SetActive(false);
         Time.timeScale = 1f;
 
@@ -228,6 +233,8 @@ public class ManagerOptions : MonoBehaviour
 
     public void QuitPause()
     {
+        Debug.Log("Se ha pulsado QuitPause");
+
         SaveCurrentButton();
         if (pausePanel != null) pausePanel.SetActive(false);
         if (quitPanel != null) quitPanel.SetActive(true);
@@ -238,6 +245,7 @@ public class ManagerOptions : MonoBehaviour
 
     public void YesQuit()
     {
+        playerRef.SaveData();
         if (AudioManager.Instance != null) AudioManager.Instance.RefreshSlidersAndTexts();
         SceneManager.LoadScene(0);
     }
@@ -253,6 +261,8 @@ public class ManagerOptions : MonoBehaviour
 
     public void QuitGame()
     {
+        Debug.Log("Se ha pulsado Quit Game");
+        SaveCurrentButton();
 
         if (pausePanel != null)
         {
@@ -268,6 +278,11 @@ public class ManagerOptions : MonoBehaviour
 
     public void YesQuitGame()
     {
+        playerRef.SaveData();
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.RefreshSlidersAndTexts();
+        }
         Debug.Log("Saliendo del juego");
         Application.Quit();
     }
@@ -288,7 +303,6 @@ public class ManagerOptions : MonoBehaviour
 
     void Update()
     {
-        // Detectar cambio de dispositivo
         if (Mouse.current != null && (Mouse.current.delta.ReadValue().magnitude > 0.1f || Mouse.current.leftButton.wasPressedThisFrame))
         {
             isUsingController = false;

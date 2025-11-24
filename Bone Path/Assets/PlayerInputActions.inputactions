@@ -37,7 +37,7 @@
                     "name": "Camera",
                     "type": "Value",
                     "id": "c01062a5-a387-4224-a168-6741af776380",
-                    "expectedControlType": "Axis",
+                    "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
@@ -160,9 +160,9 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "1D Axis_Controller",
-                    "id": "9606937e-e576-4a66-96fc-e6fb4dc47855",
-                    "path": "1DAxis",
+                    "name": "2D Vector_Cam",
+                    "id": "ef24b475-cd86-44e6-96aa-d4f5afa817d2",
+                    "path": "2DVector",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -171,19 +171,19 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "negative",
-                    "id": "4de806a4-95be-4ac1-92b4-3c1a35539df7",
-                    "path": "<Gamepad>/rightStick/down",
+                    "name": "Up",
+                    "id": "a7c73f81-da8e-4b7e-8a94-620ba02cab57",
+                    "path": "<Keyboard>/w",
                     "interactions": "",
                     "processors": "",
-                    "groups": ";Gamepad",
+                    "groups": "",
                     "action": "Camera",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "positive",
-                    "id": "5802b5da-333e-440e-8f55-da74c68d5eef",
+                    "name": "Up",
+                    "id": "caada5be-e738-414b-8edd-e00fa08310d1",
                     "path": "<Gamepad>/rightStick/up",
                     "interactions": "",
                     "processors": "",
@@ -193,19 +193,8 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "1D Axis_Keyboard",
-                    "id": "ef24b475-cd86-44e6-96aa-d4f5afa817d2",
-                    "path": "1DAxis",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Camera",
-                    "isComposite": true,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "negative",
-                    "id": "a7c73f81-da8e-4b7e-8a94-620ba02cab57",
+                    "name": "Down",
+                    "id": "e09e483b-74dd-4faf-9e93-2fd8d1e6a459",
                     "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
@@ -215,12 +204,12 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "positive",
-                    "id": "e09e483b-74dd-4faf-9e93-2fd8d1e6a459",
-                    "path": "<Keyboard>/w",
+                    "name": "Down",
+                    "id": "60486265-e594-409e-96a3-f9ed79528bec",
+                    "path": "<Gamepad>/rightStick/down",
                     "interactions": "",
                     "processors": "",
-                    "groups": ";Keyboard",
+                    "groups": ";Gamepad",
                     "action": "Camera",
                     "isComposite": false,
                     "isPartOfComposite": true
@@ -250,7 +239,7 @@
                 {
                     "name": "",
                     "id": "b0f44f74-7d55-4e0a-9442-121f3b44360e",
-                    "path": "<Mouse>/leftButton",
+                    "path": "<Keyboard>/x",
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard",

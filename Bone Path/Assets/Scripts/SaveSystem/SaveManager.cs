@@ -2,9 +2,12 @@ using UnityEngine;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
+
 public static class SaveManager
 {
-    
+    //Serialize player data and save to file
     public static void SavePlayerData(Player player)
     {
         PlayerData playerData = new PlayerData(player);
@@ -15,6 +18,7 @@ public static class SaveManager
         fileStream.Close();
     }
 
+    //Load and deserialize player data from file
     public static PlayerData LoadPlayerData()
     {
         string dataPath = Application.persistentDataPath + "/player.save";

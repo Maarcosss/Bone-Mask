@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
 
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
+
 public class PassiveEnemyAI : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -16,11 +19,6 @@ public class PassiveEnemyAI : MonoBehaviour
     private int currentHealth;
     private bool isDead = false;
 
-    [Header("Coin Settings")]
-    public GameObject coinPrefab;
-    public int coinsToDrop;
-    public float spreadRadius;
-
     private Vector3 initialPosition;
     private Vector3 currentTarget;
     private float wanderTimer = 0f;
@@ -29,12 +27,14 @@ public class PassiveEnemyAI : MonoBehaviour
     private bool isMoving = false;
 
     public Transform playerTransform;
+    private CoinDropper coinDropper;
     private Rigidbody rb;
 
     void Start()
     {
         currentHealth = maxHealth;
         rb = GetComponent<Rigidbody>();
+        coinDropper = GetComponent<CoinDropper>();
         if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
         rb.freezeRotation = true;
 
@@ -42,6 +42,7 @@ public class PassiveEnemyAI : MonoBehaviour
         InitializeMovement();
     }
 
+    //Sets initial wander direction, timer and target
     void InitializeMovement()
     {
         wanderDirection = Random.Range(0, 2) == 0 ? -1 : 1;
@@ -50,6 +51,7 @@ public class PassiveEnemyAI : MonoBehaviour
         isMoving = true;
     }
 
+    //Updates enemy movement every fixed frame, decides whether to chase player or wander
     void FixedUpdate()
     {
         if (rb == null || isDead) return;
@@ -62,6 +64,7 @@ public class PassiveEnemyAI : MonoBehaviour
             UpdateNormalMovement();
     }
 
+    //Handles normal wandering movement and changes target if needed
     void UpdateNormalMovement()
     {
         wanderTimer -= Time.fixedDeltaTime;
@@ -78,6 +81,7 @@ public class PassiveEnemyAI : MonoBehaviour
         isMoving = true;
     }
 
+    //Checks if the player is within detection range
     bool IsPlayerInRange()
     {
         if (playerTransform == null) return false;
@@ -85,6 +89,7 @@ public class PassiveEnemyAI : MonoBehaviour
         return distanceToPlayer <= playerDetectionRadius;
     }
 
+    //Sets a new wander target depending on the movement pattern
     void SetNewWanderTarget()
     {
         Vector3 newTarget;
@@ -129,6 +134,7 @@ public class PassiveEnemyAI : MonoBehaviour
         currentTarget = newTarget;
     }
 
+    //Moves enemy toward the current target depending on movement pattern
     void MoveToTarget()
     {
         if (rb.isKinematic) return;
@@ -151,6 +157,7 @@ public class PassiveEnemyAI : MonoBehaviour
         rb.velocity = targetVelocity;
     }
 
+    //Chases the player horizontally if in range
     void ChasePlayer()
     {
         if (playerTransform == null || rb.isKinematic) return;
@@ -159,6 +166,7 @@ public class PassiveEnemyAI : MonoBehaviour
         rb.velocity = new Vector3(directionX * normalMoveSpeed, rb.velocity.y, 0f);
     }
 
+    //Reduces health by specified amount and checks for death
     public void TakeDamage(int amount)
     {
         if (isDead) return;
@@ -167,38 +175,25 @@ public class PassiveEnemyAI : MonoBehaviour
         if (currentHealth <= 0) Die();
     }
 
-    public void Drop()
-    {
-        if (coinPrefab == null || coinsToDrop <= 0)
-        {
-            return;
-        }
-
-        for (int i = 0; i < coinsToDrop; i++)
-        {
-            Vector3 randomOffset = new Vector3(
-                Random.Range(-spreadRadius, spreadRadius),
-                0.5f,
-                Random.Range(-spreadRadius, spreadRadius)
-            );
-
-            Instantiate(coinPrefab, transform.position + randomOffset, Quaternion.identity);
-        }
-    }
-
+    //Handles enemy death, stops movement, drops coins and destroys object
     private void Die()
     {
         isDead = true;
         rb.velocity = Vector3.zero;
-        Drop();
+        if (coinDropper != null)
+        {
+            coinDropper.DropCoins();
+        }
         Destroy(gameObject);
     }
 
+    //Returns whether the enemy is moving
     public bool IsMoving()
     {
         return isMoving && rb != null && rb.velocity.magnitude > 0.1f;
     }
 
+    //Draws gizmos in editor for detection range, wander radius and current target
     void OnDrawGizmosSelected()
     {
         Vector3 center = Application.isPlaying ? initialPosition : transform.position;

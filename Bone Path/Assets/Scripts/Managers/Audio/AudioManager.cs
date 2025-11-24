@@ -3,6 +3,9 @@ using UnityEngine.Audio;
 using UnityEngine.UI;
 using TMPro;
 
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
+
 public class AudioManager : MonoBehaviour
 {
     [Header("Mixer")]

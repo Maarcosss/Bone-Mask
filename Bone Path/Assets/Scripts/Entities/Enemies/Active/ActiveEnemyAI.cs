@@ -1,5 +1,9 @@
 ﻿using UnityEngine;
 
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
+
+[RequireComponent(typeof(Rigidbody))]
 public class ActiveEnemyAI : MonoBehaviour
 {
     [Header("AI Behavior - Active Enemy")]
@@ -19,21 +23,16 @@ public class ActiveEnemyAI : MonoBehaviour
 
     [Header("AI States")]
     public bool isChasing = false;
-    public bool isAttacking = false;
     public bool isPatrolling = true;
-
-    [Header("Coin Settings")]
-    public GameObject coinPrefab;
-    public int coinsToDrop;
-    public float spreadRadius;
 
     private Vector3 initialPosition;
     private int patrolDirection = 1;
     private float patrolTimer = 0f;
 
     private Rigidbody rigibodyActiveEnemy;
+    private CoinDropper coinDropper;
 
-    private enum AIState { Patrolling, Chasing, Attacking, Stunned }
+    private enum AIState { Patrolling, Chasing }
     private AIState currentState = AIState.Patrolling;
 
     void Start()
@@ -44,14 +43,17 @@ public class ActiveEnemyAI : MonoBehaviour
         patrolDirection = Random.Range(0, 2) == 0 ? -1 : 1;
 
         rigibodyActiveEnemy = GetComponent<Rigidbody>();
+        coinDropper = GetComponent<CoinDropper>();
     }
 
+    //Handles AI update every fixed frame, skips if dead or Rigidbody missing
     void FixedUpdate()
     {
         if (isDead || rigibodyActiveEnemy == null) return;
         UpdateAI();
     }
 
+    //Updates AI state and decides whether to patrol or chase player
     void UpdateAI()
     {
         float distanceToPlayer = 0f;
@@ -90,6 +92,7 @@ public class ActiveEnemyAI : MonoBehaviour
         }
     }
 
+    //Handles patrolling behavior, changes direction if needed
     void Patrol()
     {
         if (rigibodyActiveEnemy.isKinematic) return;
@@ -106,6 +109,7 @@ public class ActiveEnemyAI : MonoBehaviour
         rigibodyActiveEnemy.velocity = targetVelocity;
     }
 
+    //Checks if the enemy should reverse patrol direction based on patrol radius
     bool ShouldChangePatrolDirection()
     {
         float distanceFromStart = transform.position.x - initialPosition.x;
@@ -117,6 +121,7 @@ public class ActiveEnemyAI : MonoBehaviour
         return false;
     }
 
+    //Chases the player by moving towards their horizontal position
     void ChasePlayer(Transform playerTransform)
     {
         if (rigibodyActiveEnemy.isKinematic) return;
@@ -126,6 +131,7 @@ public class ActiveEnemyAI : MonoBehaviour
         rigibodyActiveEnemy.velocity = targetVelocity;
     }
 
+    //Reduces health by specified amount and checks for death
     public void TakeDamage(int amount)
     {
         if (isDead) return;
@@ -138,30 +144,17 @@ public class ActiveEnemyAI : MonoBehaviour
         }
     }
 
-    public void Drop()
-    {
-        if (coinPrefab == null || coinsToDrop <= 0)
-        {
-            return;
-        }
-
-        for (int i = 0; i < coinsToDrop; i++)
-        {
-            Vector3 randomOffset = new Vector3(
-                Random.Range(-spreadRadius, spreadRadius),
-                0.5f,
-                Random.Range(-spreadRadius, spreadRadius)
-            );
-
-            Instantiate(coinPrefab, transform.position + randomOffset, Quaternion.identity);
-        }
-    }
-
+    //Handles enemy death, stops movement, drops coins and destroys the object
     private void Die()
     {
         isDead = true;
         rigibodyActiveEnemy.velocity = Vector3.zero;
-        Drop();
+
+        if (coinDropper != null)
+        {
+            coinDropper.DropCoins();
+        }
+
         Destroy(gameObject);
     }
 
