@@ -4,10 +4,6 @@ using UnityEngine.SceneManagement;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
-using Unity.VisualScripting;
-
-/*Author: Marcos Isar
-Date: 20 - Nov - 2025*/
 
 public class ManagerOptions : MonoBehaviour
 {
@@ -279,10 +275,7 @@ public class ManagerOptions : MonoBehaviour
     public void YesQuitGame()
     {
         playerRef.SaveData();
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.RefreshSlidersAndTexts();
-        }
+        if (AudioManager.Instance != null) AudioManager.Instance.RefreshSlidersAndTexts();
         Debug.Log("Saliendo del juego");
         Application.Quit();
     }

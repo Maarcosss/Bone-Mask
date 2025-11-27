@@ -2,30 +2,20 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Localization;
-
-/*Author: Marcos Isar
-Date: 20 - Nov - 2025*/
 
 public class DialogueManager : MonoBehaviour
 {
-    [Header("UI")]
     [SerializeField] private GameObject dialogueMarker;
     [SerializeField] private GameObject dialoguePanel;
     [SerializeField] private TMP_Text dialogueText;
-
-    [Header("Dialogue Lines")]
-    [SerializeField] private LocalizedString[] dialogueLines;
+    [SerializeField, TextArea(4, 6)] private string[] dialogueLines;
 
     private float typingDelay = 0.05f;
-    public InputActionReference interactAction;
 
+    public InputActionReference interactAction;
     private bool isPlayerInRange;
     private bool dialogueStarted;
     private int currentLineIndex;
-
-    private string currentLine;
-    private bool isTyping;
 
     private void Update()
     {
@@ -35,23 +25,29 @@ public class DialogueManager : MonoBehaviour
             {
                 StartDialogue();
             }
-            else if (isTyping)
+            else if (dialogueText.text == dialogueLines[currentLineIndex])
             {
-                StopAllCoroutines();
-                dialogueText.text = currentLine;
-                isTyping = false;
+                ShowNextLine();
             }
             else
             {
-                ShowNextLine();
+                StopAllCoroutines();
+                dialogueText.text = dialogueLines[currentLineIndex];
             }
         }
     }
 
-    private void OnEnable() => interactAction.action.Enable();
-    private void OnDisable() => interactAction.action.Disable();
+    private void OnEnable()
+    {
+        interactAction.action.Enable();
+    }
 
-    //Starts the dialogue, shows panel, stops time, and begins typing first line
+    private void OnDisable()
+    {
+        interactAction.action.Disable();
+    }
+
+    //Start a dialogue
     private void StartDialogue()
     {
         dialogueStarted = true;
@@ -62,7 +58,7 @@ public class DialogueManager : MonoBehaviour
         StartCoroutine(TypeLine());
     }
 
-    //Shows the next dialogue line or ends dialogue if finished
+    //Advance to the next line of dialogue
     private void ShowNextLine()
     {
         currentLineIndex++;
@@ -79,38 +75,26 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
-    //Coroutine to display the current dialogue line letter by letter
+    //Display a dialog box letter by letter
     private IEnumerator TypeLine()
     {
-        isTyping = true;
         dialogueText.text = string.Empty;
-
-        var handle = dialogueLines[currentLineIndex].GetLocalizedStringAsync();
-        yield return new WaitUntil(() => handle.IsDone);
-
-        currentLine = handle.Result;
-
-        foreach (char ch in currentLine)
+        foreach (char ch in dialogueLines[currentLineIndex])
         {
             dialogueText.text += ch;
             yield return new WaitForSecondsRealtime(typingDelay);
         }
-
-        isTyping = false;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
-        {
-            isPlayerInRange = true;
-            dialogueMarker.SetActive(true);
-        }
+        isPlayerInRange = true;
+        dialogueMarker.SetActive(true);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.gameObject.CompareTag("Player"))
         {
             isPlayerInRange = false;
             dialogueMarker.SetActive(false);

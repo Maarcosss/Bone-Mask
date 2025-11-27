@@ -1,7 +1,0 @@
-Medidas títulos
-
-Titulos: 40 Scale: 1.25
-Títulos Menús Juego: 24 Scale: 1.25
-Botones: 20 Scale: 1.25
-TXT: 16 Scale: 1.25
-Versión: 12 Scale: 1.25

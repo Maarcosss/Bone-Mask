@@ -1,0 +1,150 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &8436993345886560
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2419138123122158846, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2419138123122158846, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.74
+      objectReference: {fileID: 0}
+    - target: {fileID: 2557213779161866452, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 503.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -3.99
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 3.36
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 8130849326628450877, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8907351292538120327, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      propertyPath: m_Name
+      value: cow
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8907351292538120327, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5922426740117798534}
+    - targetCorrespondingSourceObject: {fileID: 2557213779161866452, guid: 625012c180e7a7c4d9adf5014993b4cb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7176381183610877906}
+  m_SourcePrefab: {fileID: 100100000, guid: 625012c180e7a7c4d9adf5014993b4cb, type: 3}
+--- !u!1 &2549306789824297396 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2557213779161866452, guid: 625012c180e7a7c4d9adf5014993b4cb,
+    type: 3}
+  m_PrefabInstance: {fileID: 8436993345886560}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &7176381183610877906
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2549306789824297396}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 15934b331a034084ca91aca48839f794, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!1 &8899321393574015463 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8907351292538120327, guid: 625012c180e7a7c4d9adf5014993b4cb,
+    type: 3}
+  m_PrefabInstance: {fileID: 8436993345886560}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5922426740117798534
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8899321393574015463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b51e5e47a98740241aea79b86f29befd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DialogueMark: {fileID: 2549306789824297396}
+  DialoguePanel: {fileID: 0}
+  DialogueText: {fileID: 0}
+  dialogueLines:
+  - El anciano Alarik se sienta frente a la taberna, con una pipa siempre encendida
+    y la mirada perdida en el horizonte.
+  - "Sus ropas gastadas y su andar lento cuentan m\xE1s historias que sus palabras.
+    Aunque muchos lo ven como un simple viejo, hay un brillo en sus ojos que revela
+    secretos guardados por a\xF1os."
+  - "Los ni\xF1os del pueblo se acercan a escucharlo, atra\xEDdos por sus relatos
+    de mares lejanos y monta\xF1as imposibles."
+  - "A menudo, nadie sabe si habla con verdad o pura fantas\xEDa."

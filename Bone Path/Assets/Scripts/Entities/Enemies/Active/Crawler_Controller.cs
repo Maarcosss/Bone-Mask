@@ -2,9 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/*Author: David Gomez
-Date: 20 - Nov - 2025*/
-
 public class Crawler_Controller : MonoBehaviour
 {
     [Header("Health")]
@@ -33,17 +30,17 @@ public class Crawler_Controller : MonoBehaviour
     private void Start()
     {
         rb_Crawler = GetComponent<Rigidbody>();
-        rb_Crawler.useGravity = true;
+        rb_Crawler.useGravity = true;          // Activar gravedad
         player = GameObject.FindGameObjectWithTag("Player").transform;
         currentHealth = health;
         isAlive = true;
     }
 
-    //Checks distance to player and decides between chasing or patrolling
     private void FixedUpdate()
     {
         if (!isAlive) return;
 
+        // Comprobar distancia al jugador
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
         if (distanceToPlayer <= detectionRange)
@@ -57,12 +54,12 @@ public class Crawler_Controller : MonoBehaviour
             Patrol();
     }
 
-    //Handles patrol movement between left and right points
     private void Patrol()
     {
         Vector3 target = movingRight ? rightPoint.position : leftPoint.position;
         Vector3 dir = (target - transform.position).normalized;
 
+        // Solo moverse horizontalmente
         dir.y = 0;
 
         rb_Crawler.MovePosition(transform.position + dir * patrolSpeed * Time.fixedDeltaTime);
@@ -71,7 +68,6 @@ public class Crawler_Controller : MonoBehaviour
             FlipDirection();
     }
 
-    //Moves toward the player and performs jump attacks
     private void ChasePlayer()
     {
         Vector3 dir = (player.position - transform.position).normalized;
@@ -79,6 +75,7 @@ public class Crawler_Controller : MonoBehaviour
 
         rb_Crawler.MovePosition(transform.position + dir * chaseSpeed * Time.fixedDeltaTime);
 
+        // Salto al atacar
         if (Time.time - lastAttackTime >= attackCooldown)
         {
             JumpAttack();
@@ -86,39 +83,37 @@ public class Crawler_Controller : MonoBehaviour
         }
     }
 
-    //Switches direction when reaching patrol boundaries
     private void FlipDirection()
     {
         movingRight = !movingRight;
     }
 
-    //Performs a jump attack if grounded
     private void JumpAttack()
     {
+        // Solo aplicar si está tocando el suelo
         if (IsGrounded())
         {
             rb_Crawler.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
     }
 
-    //Checks if enemy is on the ground using raycast
     private bool IsGrounded()
     {
+        // Raycast hacia abajo para detectar suelo
         return Physics.Raycast(transform.position, Vector3.down, 0.6f);
     }
 
-    //Handles collision with player and attack cooldown
     private void OnCollisionStay(Collision collision)
     {
         if (!isAlive) return;
 
         if (collision.gameObject.CompareTag("Player") && Time.time - lastAttackTime >= attackCooldown)
         {
+            // collision.gameObject.GetComponent<PlayerHealth>().TakeDamage(contactDamage);
             lastAttackTime = Time.time;
         }
     }
 
-    //Reduces health and triggers death if needed
     public void TakeDamage(int amount)
     {
         if (!isAlive) return;
@@ -129,14 +124,12 @@ public class Crawler_Controller : MonoBehaviour
             Die();
     }
 
-    //Handles enemy death and destruction
     private void Die()
     {
         isAlive = false;
         Destroy(gameObject);
     }
 
-    //Draws detection gizmo in editor
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

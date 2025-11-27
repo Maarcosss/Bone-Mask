@@ -1,0 +1,41 @@
+# --- UNITY CORE FOLDERS (NEVER COMMIT THESE) ---
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+[Mm]emoryCaptures/
+[Bb]ee/
+
+# --- UNITY AUTO-GENERATED FILES ---
+*.pidb
+*.pidb.meta
+*.pdb
+*.pdb.meta
+*.mdb
+*.mdb.meta
+*.opendb
+*.VC.db
+*.DS_Store
+*.tmp
+*.bak
+*.swp
+*.lock
+
+# --- ADDRESSABLES (SAFE EVEN IF YOU DON’T USE THEM) ---
+*/AddressableAssetsData/*/*.bin
+*/AddressableAssetsData/*/*.hash
+
+# --- VISUAL STUDIO / IDE FILES ---
+.vs/
+*.csproj
+*.sln
+*.unityproj
+*.user
+*.userprefs
+
+# --- OS FILES ---
+Thumbs.db
+desktop.ini

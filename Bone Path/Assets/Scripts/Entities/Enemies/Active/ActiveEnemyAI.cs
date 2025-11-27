@@ -1,8 +1,5 @@
 ﻿using UnityEngine;
 
-/*Author: Marcos Isar
-Date: 20 - Nov - 2025*/
-
 [RequireComponent(typeof(Rigidbody))]
 public class ActiveEnemyAI : MonoBehaviour
 {
@@ -46,14 +43,12 @@ public class ActiveEnemyAI : MonoBehaviour
         coinDropper = GetComponent<CoinDropper>();
     }
 
-    //Handles AI update every fixed frame, skips if dead or Rigidbody missing
     void FixedUpdate()
     {
         if (isDead || rigibodyActiveEnemy == null) return;
         UpdateAI();
     }
 
-    //Updates AI state and decides whether to patrol or chase player
     void UpdateAI()
     {
         float distanceToPlayer = 0f;
@@ -92,7 +87,6 @@ public class ActiveEnemyAI : MonoBehaviour
         }
     }
 
-    //Handles patrolling behavior, changes direction if needed
     void Patrol()
     {
         if (rigibodyActiveEnemy.isKinematic) return;
@@ -109,7 +103,6 @@ public class ActiveEnemyAI : MonoBehaviour
         rigibodyActiveEnemy.velocity = targetVelocity;
     }
 
-    //Checks if the enemy should reverse patrol direction based on patrol radius
     bool ShouldChangePatrolDirection()
     {
         float distanceFromStart = transform.position.x - initialPosition.x;
@@ -121,7 +114,6 @@ public class ActiveEnemyAI : MonoBehaviour
         return false;
     }
 
-    //Chases the player by moving towards their horizontal position
     void ChasePlayer(Transform playerTransform)
     {
         if (rigibodyActiveEnemy.isKinematic) return;
@@ -131,7 +123,6 @@ public class ActiveEnemyAI : MonoBehaviour
         rigibodyActiveEnemy.velocity = targetVelocity;
     }
 
-    //Reduces health by specified amount and checks for death
     public void TakeDamage(int amount)
     {
         if (isDead) return;
@@ -144,7 +135,6 @@ public class ActiveEnemyAI : MonoBehaviour
         }
     }
 
-    //Handles enemy death, stops movement, drops coins and destroys the object
     private void Die()
     {
         isDead = true;

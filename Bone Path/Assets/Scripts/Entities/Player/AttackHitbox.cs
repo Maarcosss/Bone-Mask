@@ -1,9 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/*Author: Marcos Isar
-Date: 20 - Nov - 2025*/
-
 public class AttackHitbox : MonoBehaviour
 {
     [Header("Attack Settings")]
@@ -57,7 +54,6 @@ public class AttackHitbox : MonoBehaviour
         }
     }
 
-    //Performs attack, applies damage to enemies and breakable objects, and adds soul to player
     private void PerformAttack()
     {
         Vector3 attackPosition = transform.position + transform.TransformDirection(hitboxOffset);
@@ -105,7 +101,6 @@ public class AttackHitbox : MonoBehaviour
         }
     }
 
-    //Draws the attack hitbox in the editor for visualization
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
