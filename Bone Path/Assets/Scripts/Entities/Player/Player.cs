@@ -1,7 +1,11 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using System.Collections;
 using TMPro;
+
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
 
 public class Player : MonoBehaviour
 {
@@ -9,10 +13,11 @@ public class Player : MonoBehaviour
     [SerializeField] private Image heart1;
     [SerializeField] private Image heart2;
     [SerializeField] private Image heart3;
-    [SerializeField] private Sprite fullHeart;
+    [SerializeField] private Sprite fullHeart;  
     [SerializeField] private Sprite emptyHeart;
     public int health = 3;
     public int maxHealth = 3;
+    public bool isDead = false;
     public float soul = 0f;
     public float maxSoul = 100f;
     [Range(0.01f, 1f)][SerializeField] private float healCostPercent = 0.5f;
@@ -49,13 +54,6 @@ public class Player : MonoBehaviour
     private float damageTimer = 0f;
 
     private bool isGrounded;
-
-    // ---------------------------
-    //       ANIMATION
-    // ---------------------------
-    [Header("Animations")]
-    [SerializeField] private Animator animator;
-
     public ManagerOptions ManagerOptionsRef;
 
     void Start()
@@ -63,49 +61,49 @@ public class Player : MonoBehaviour
         rigidBody = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
         rigidBody.freezeRotation = true;
-
-        // Animator reference
-        animator = GetComponentInChildren<Animator>();
     }
 
     void Update()
     {
         if (damageTimer > 0f)
+        {
             damageTimer -= Time.deltaTime;
+        }
 
         isGrounded = Physics.Raycast(transform.position, Vector3.down, 1.1f);
-
         Move();
         HandleHealing();
         UpdateHeartsUI();
+        UpdateCoinUI();
         UpdateSoulUI();
         Pause();
 
-        HandleAnimations();
+        if (health <= 0)
+        {
+            Die();
+        }
+
     }
 
+
+    //Handles physics updates each fixed frame
     private void FixedUpdate()
     {
+        if (isDead) return;
+
         float control = isGrounded ? 1f : airControlMultiplier;
         Vector3 targetVelocity = new Vector3(input.x * speed * control, rigidBody.velocity.y, 0f);
         rigidBody.velocity = targetVelocity;
 
         if (!isGrounded)
+        {
             rigidBody.AddForce(Physics.gravity * (gravityMultiplier - 1f) * rigidBody.mass);
+        }
 
         if (Mathf.Abs(input.x) > 0.01f)
+        {
             transform.rotation = input.x < 0f ? Quaternion.Euler(0f, 180f, 0f) : Quaternion.Euler(0f, 0f, 0f);
-    }
-
-    // Animation handling
-    private void HandleAnimations()
-    {
-        animator.SetBool("IsRunning", Mathf.Abs(input.x) > 0.01f && isGrounded);
-        animator.SetBool("isGrounded", isGrounded);
-
-        // Si el personaje vuelve al suelo, desactiva el bool jump.
-        if (isGrounded)
-            animator.SetBool("jump", false);
+        }
     }
 
     void OnEnable()
@@ -120,35 +118,49 @@ public class Player : MonoBehaviour
         interactAction?.action.Disable();
     }
 
+    //Reads player movement input
     private void Pause()
     {
         if (pauseAction != null && pauseAction.action.ReadValue<float>() > 0.1f)
+        {
             ManagerOptionsRef.Pause();
+        }
     }
 
+    //Handles player jump
     public void Move()
     {
         input = playerInput.actions["Move"].ReadValue<Vector2>();
     }
 
+    //  Sets the speed to the given value
+    public void SetSpeed(float newSpeed)
+    {
+        speed = newSpeed;
+    }
+
+    //Returns the current player speed
+    public float GetSpeed()
+    {
+        return speed;
+    }
+
+    //Handles healing input and timing
     public void Jump(InputAction.CallbackContext callbackContext)
     {
         if (callbackContext.performed && isGrounded)
         {
             rigidBody.velocity = new Vector3(rigidBody.velocity.x, 0f, rigidBody.velocity.z);
             rigidBody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-
-            animator.SetBool("Jump", true); // Activamos el bool
         }
     }
 
-
+    //Applies healing to player
     private void HandleHealing()
     {
         float requiredSoul = maxSoul * healCostPercent;
 
-        if (healAction != null && healAction.action.ReadValue<float>() > 0.1f &&
-            soul >= requiredSoul && health < maxHealth)
+        if (healAction != null && healAction.action.ReadValue<float>() > 0.1f && soul >= requiredSoul && health < maxHealth)
         {
             healTimer += Time.deltaTime;
 
@@ -164,40 +176,44 @@ public class Player : MonoBehaviour
         }
     }
 
+    //Updates heart UI based on current health
     private void HealPlayer()
     {
-        // Healing animation
-        animator.SetTrigger("heal");
-
         health = Mathf.Min(health + 1, maxHealth);
         soul -= maxSoul * healCostPercent;
         soul = Mathf.Max(soul, 0f);
         UpdateSoulUI();
     }
 
-    private void UpdateHeartsUI()
+    //Updates soul UI
+    public void UpdateHeartsUI()
     {
         heart1.sprite = health >= 1 ? fullHeart : emptyHeart;
         heart2.sprite = health >= 2 ? fullHeart : emptyHeart;
         heart3.sprite = health >= 3 ? fullHeart : emptyHeart;
     }
 
+    //Updates coin UI
     public void UpdateSoulUI()
     {
         if (soulText != null)
+        {
             soulText.text = Mathf.FloorToInt(soul).ToString();
+        }
     }
 
+    //Handles checkpoint interaction
     private void UpdateCoinUI()
     {
         if (coinText != null)
+        {
             coinText.text = coins.ToString();
+        }
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.CompareTag("Checkpoint") && interactAction != null &&
-            interactAction.action.ReadValue<float>() > 0.1f)
+        if (other.CompareTag("Checkpoint") && interactAction != null && interactAction.action.ReadValue<float>() > 0.1f)
         {
             SaveData();
         }
@@ -216,22 +232,35 @@ public class Player : MonoBehaviour
         {
             health = Mathf.Max(health - 1, 0);
             damageTimer = damageCooldown;
-
-            // Hurt animation
-            animator.SetTrigger("hurt");
-
             UpdateHeartsUI();
         }
     }
 
+    public void Die()
+    {
+        isDead = true;
+        rigidBody.velocity = Vector3.zero;
+        StartCoroutine(DeathRoutine());
+    }
+
+    private IEnumerator DeathRoutine()
+    {
+        yield return new WaitForSeconds(3f);
+        isDead = false;
+        LoadData();
+    }
+
+    //Saves player data
     public void SaveData()
     {
         SaveManager.SavePlayerData(this);
         Debug.Log("DATOS GUARDADOS");
     }
 
+    //Loads player data
     public void LoadData()
     {
+        isDead = false;
         PlayerData playerData = SaveManager.LoadPlayerData();
         soul = playerData.soul;
         health = playerData.health;

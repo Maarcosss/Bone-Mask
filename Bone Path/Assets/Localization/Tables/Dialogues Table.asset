@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5be51871efa6c3e4eae1703925c8f5ac, type: 3}
+  m_Name: Dialogues Table
+  m_EditorClassIdentifier: 
+  m_SharedTableData: {fileID: 11400000, guid: 00de36bc9602c704bb3650eaeba38128, type: 2}
+  m_Tables:
+  - {fileID: 11400000, guid: 3324040fb3c0b9643a27e2cace5e1945, type: 2}
+  - {fileID: 11400000, guid: a3f88201c93555b4f9df08a27dad264c, type: 2}
+  - {fileID: 11400000, guid: 476b3fe3d4b1ca94292d39c508381ea0, type: 2}
+  - {fileID: 11400000, guid: d13f88eee5b39194fa259fde231ff3af, type: 2}
+  - {fileID: 11400000, guid: 838efd4734877734494ba7171a1bd045, type: 2}
+  - {fileID: 11400000, guid: 7e30c49b87e4c22469008b0db2492dbf, type: 2}
+  m_Extensions: []
+  m_Group: String Table
+  references:
+    version: 2
+    RefIds: []

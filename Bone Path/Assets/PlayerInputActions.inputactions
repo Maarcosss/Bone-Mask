@@ -160,7 +160,7 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "2DVector_Cam",
+                    "name": "2D Vector_Cam",
                     "id": "ef24b475-cd86-44e6-96aa-d4f5afa817d2",
                     "path": "2DVector",
                     "interactions": "",
@@ -171,8 +171,30 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "Down",
+                    "name": "Up",
                     "id": "a7c73f81-da8e-4b7e-8a94-620ba02cab57",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Camera",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Up",
+                    "id": "caada5be-e738-414b-8edd-e00fa08310d1",
+                    "path": "<Gamepad>/rightStick/up",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "Camera",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Down",
+                    "id": "e09e483b-74dd-4faf-9e93-2fd8d1e6a459",
                     "path": "<Keyboard>/s",
                     "interactions": "",
                     "processors": "",
@@ -182,12 +204,12 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "Up",
-                    "id": "e09e483b-74dd-4faf-9e93-2fd8d1e6a459",
-                    "path": "<Keyboard>/w",
+                    "name": "Down",
+                    "id": "60486265-e594-409e-96a3-f9ed79528bec",
+                    "path": "<Gamepad>/rightStick/down",
                     "interactions": "",
                     "processors": "",
-                    "groups": ";Keyboard",
+                    "groups": ";Gamepad",
                     "action": "Camera",
                     "isComposite": false,
                     "isPartOfComposite": true

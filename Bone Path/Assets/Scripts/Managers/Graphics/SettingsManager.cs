@@ -4,6 +4,9 @@ using TMPro;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
+
 public class SettingsManager : MonoBehaviour
 {
     public static SettingsManager instance;
@@ -22,6 +25,7 @@ public class SettingsManager : MonoBehaviour
     private Image panelBrightnessInstance;
     public float sliderValue;
 
+    //Ensure singleton instance and persist across scenes
     private void Awake()
     {
         if (instance != null && instance != this)
@@ -38,7 +42,7 @@ public class SettingsManager : MonoBehaviour
     private void Start()
     {
 
-        sliderValue = PlayerPrefs.GetFloat("brillo", 0.5f);
+        sliderValue = PlayerPrefs.GetFloat("brightness", 0.5f);
         if (slider != null)
         {
             slider.value = sliderValue;
@@ -46,7 +50,7 @@ public class SettingsManager : MonoBehaviour
         }
         if (brightnessText != null)
         {
-            UpdateBrilloText(sliderValue);
+            UpdateBrightnessText(sliderValue);
         }
 
         bool fullscreenSaved = PlayerPrefs.GetInt("fullscreen", Screen.fullScreen ? 1 : 0) == 1;
@@ -60,12 +64,13 @@ public class SettingsManager : MonoBehaviour
         ReviewResolutions();
     }
 
+    //Instantiate brightness panel and update its transparency
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null)
         {
-            Debug.LogWarning("No se encontró un Canvas en la escena. El brillo no se mostrará.");
+            Debug.LogWarning("No se encontró un Canvas en la escena. El brightness no se mostrará.");
             return;
         }
 
@@ -85,24 +90,27 @@ public class SettingsManager : MonoBehaviour
         }
     }
 
+    //Update slider value, brightness panel, and text
     public void ChangeSlider(float value)
     {
         sliderValue = value;
-        PlayerPrefs.SetFloat("brillo", sliderValue);
+        PlayerPrefs.SetFloat("brightness", sliderValue);
         PlayerPrefs.Save();
 
         if (panelBrightnessInstance != null)
             panelBrightnessInstance.color = new Color(panelBrightnessInstance.color.r, panelBrightnessInstance.color.g, panelBrightnessInstance.color.b, 1 - sliderValue);
 
-        UpdateBrilloText(sliderValue);
+        UpdateBrightnessText(sliderValue);
     }
 
-    private void UpdateBrilloText(float value)
+    //Update brightness text display
+    private void UpdateBrightnessText(float value)
     {
         if (brightnessText != null)
             brightnessText.text = (value * 10).ToString("0");
     }
 
+    //Reset all settings to default values
     public void ResetValue()
     {
         sliderValue = 1f;
@@ -117,8 +125,8 @@ public class SettingsManager : MonoBehaviour
                 1 - sliderValue
             );
 
-        UpdateBrilloText(sliderValue);
-        PlayerPrefs.SetFloat("brillo", sliderValue);
+        UpdateBrightnessText(sliderValue);
+        PlayerPrefs.SetFloat("brightness", sliderValue);
 
         Screen.SetResolution(1920, 1080, true);
         PlayerPrefs.SetInt("fullscreen", 1);
@@ -146,7 +154,7 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-
+    //Enable or disable fullscreen and save preference
     public void ActiveFullScreen(bool fullscreen)
     {
         Screen.fullScreen = fullscreen;
@@ -154,6 +162,7 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+    //Populate resolutions dropdown and set current or saved resolution
     public void ReviewResolutions()
     {
         resolutions = Screen.resolutions;
@@ -183,6 +192,7 @@ public class SettingsManager : MonoBehaviour
         resolutionsDropdown.onValueChanged.AddListener(ChangeResolution);
     }
 
+    //Apply selected screen resolution and save preference
     public void ChangeResolution(int indexResolution)
     {
         PlayerPrefs.SetInt("resolutionnumber", indexResolution);

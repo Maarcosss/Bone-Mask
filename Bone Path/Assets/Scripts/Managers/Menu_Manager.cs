@@ -1,12 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using UnityEditor.SearchService;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
 
 public class Menu_Manager : MonoBehaviour
 {
@@ -62,10 +64,10 @@ public class Menu_Manager : MonoBehaviour
     {
         if (eventSystem != null && eventSystem.currentSelectedGameObject != null && sourcePanel != null)
         {
-            Selectable seleccionActual = eventSystem.currentSelectedGameObject.GetComponent<Selectable>();
-            if (seleccionActual != null)
+            Selectable currentSelection = eventSystem.currentSelectedGameObject.GetComponent<Selectable>();
+            if (currentSelection != null)
             {
-                lastSelectionPerPanel[sourcePanel] = seleccionActual;
+                lastSelectionPerPanel[sourcePanel] = currentSelection;
             }
         }
     }
@@ -104,14 +106,14 @@ public class Menu_Manager : MonoBehaviour
     }
 
     //Wait for menu frame
-    IEnumerator SelectAfterFrame(GameObject objetoASeleccionar)
+    IEnumerator SelectAfterFrame(GameObject objectToSelect)
     {
         yield return null;
 
-        if (eventSystem != null && objetoASeleccionar != null)
+        if (eventSystem != null && objectToSelect != null)
         {
             eventSystem.SetSelectedGameObject(null);
-            eventSystem.SetSelectedGameObject(objetoASeleccionar);
+            eventSystem.SetSelectedGameObject(objectToSelect);
         }
     }
 

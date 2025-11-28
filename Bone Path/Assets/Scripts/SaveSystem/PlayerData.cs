@@ -1,5 +1,7 @@
-
 [System.Serializable]
+
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
 
 public class PlayerData
 {
@@ -9,6 +11,7 @@ public class PlayerData
     public int coins;
     public float[] position = new float[3];
 
+    //Copy player's stats and position into serializable data
     public PlayerData(Player player)
     {
         health = player.health;

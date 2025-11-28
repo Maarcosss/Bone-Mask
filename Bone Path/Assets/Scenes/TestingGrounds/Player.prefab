@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3811838939899346932}
   - component: {fileID: 6955307393708645468}
   - component: {fileID: 5709472438153925858}
+  - component: {fileID: 7089371998938850921}
   - component: {fileID: 3656166718566803891}
   - component: {fileID: 1531645144224868683}
   - component: {fileID: 2242456880088245959}
@@ -89,6 +90,29 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!136 &7089371998938850921
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1617628838894581403}
+  m_Material: {fileID: 13400000, guid: 8d5eaef6c3c873a4d95c6636557f205c, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &3656166718566803891
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -153,7 +177,6 @@ MonoBehaviour:
   pauseAction: {fileID: -6125276270753852978, guid: d6ed18590eaf56344853bbd71e95ca38,
     type: 3}
   damageCooldown: 1
-  animator: {fileID: 0}
   ManagerOptionsRef: {fileID: 0}
 --- !u!114 &2242456880088245959
 MonoBehaviour:

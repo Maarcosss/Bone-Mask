@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
+
 public class DropdownController : MonoBehaviour, ISelectHandler
 {
     private ScrollRect scrollRect;
@@ -21,6 +24,7 @@ public class DropdownController : MonoBehaviour, ISelectHandler
         scrollPosition = 1 - ((float)childIndex / childCount);
     }
 
+    //Adjust ScrollRect position when element is selected with gamepad
     public void OnSelect(BaseEventData eventData)
     {
         if (IsGamepadActive() && scrollRect)
@@ -29,6 +33,7 @@ public class DropdownController : MonoBehaviour, ISelectHandler
         }
     }
 
+    //Check if any gamepad input is active
     private bool IsGamepadActive()
     {
         float horizontal = Input.GetAxis("Horizontal");

@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.Localization.Settings;
 using TMPro;
 
+/*Author: Marcos Isar
+Date: 20 - Nov - 2025*/
+
 public class LanguageController : MonoBehaviour
 {
     private bool active = false;
@@ -21,6 +24,7 @@ public class LanguageController : MonoBehaviour
         ChangeLocale(ID);
     }
 
+    //Start coroutine to change locale if not already active
     public void ChangeLocale(int localeID)
     {
         if(active)
@@ -29,7 +33,8 @@ public class LanguageController : MonoBehaviour
         }
         StartCoroutine(SetLocale(localeID));
     }
-    
+
+    //Set the selected locale and save preference
     private IEnumerator SetLocale(int localeID)
     {
         active = true;
